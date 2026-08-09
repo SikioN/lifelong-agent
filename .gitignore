@@ -1,0 +1,45 @@
+.worktrees/
+.private-journal/
+.claude/
+.superpowers/
+.DS_Store
+node_modules/
+inspo
+triage/
+
+# obra/superpowers plugin repo, dropped directly into this folder's root —
+# not part of the T-Lab / DeMem project, do not commit to this project's git.
+/.agents/
+/.gitattributes
+/.pre-commit-config.yaml
+/.version-bump.json
+/CLAUDE.md
+/CODE_OF_CONDUCT.md
+/GEMINI.md
+/LICENSE
+/RELEASE-NOTES.md
+/gemini-extension.json
+/hooks/
+/package.json
+/plan.md
+/scripts/
+/skills/
+/tests/*
+!/tests/test_memory_budget.py
+!/tests/test_manipulation_check.py
+
+# superpowers' own docs/ subtree — docs/materials/ (T-Lab task materials)
+# is NOT ignored and stays part of this project's repo.
+/docs/.DS_Store
+/docs/README.kimi.md
+/docs/README.opencode.md
+/docs/plans/
+/docs/porting-to-a-new-harness.md
+/docs/superpowers/
+/docs/testing.md
+/docs/windows/
+
+# Eval harness lives in its own repository, cloned into evals/ for local
+# development (see CLAUDE.md / README.md). It is not part of the published
+# plugin, so the whole directory is ignored here.
+evals/

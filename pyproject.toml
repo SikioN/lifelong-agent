@@ -1,0 +1,19 @@
+[project]
+name = "demem-lite"
+version = "0.1.0"
+description = "DeMem-lite: decision-aware memory for lifelong text agents (T-Lab take-home)"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.2",
+    "transformers>=4.40",
+    "sentence-transformers>=3.0",
+    "peft>=0.11",
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "matplotlib>=3.8",
+    "pyyaml>=6.0",
+    "pytest>=8.0",
+]
+
+[tool.uv]
+package = false
