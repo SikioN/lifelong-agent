@@ -117,3 +117,53 @@ def test_resolve_correct_action_override_regime_uses_permuted_mapping():
     assert resolve_correct_action(0, tenant, default_map, perm) == expected
     # perm has no fixed points (Task 1), so override always changes the result
     assert resolve_correct_action(0, tenant, default_map, perm) != default_map[0]
+
+
+from env.generator import Ticket, TicketGenerator
+
+
+def test_ticket_generator_stream_yields_requested_length():
+    gen = TicketGenerator(alpha=0.3, seed=5)
+    tickets = list(gen.stream(50))
+    assert len(tickets) == 50
+    assert all(isinstance(t, Ticket) for t in tickets)
+
+
+def test_ticket_generator_is_deterministic_given_seed():
+    stream_a = [t.correct_action for t in TicketGenerator(alpha=0.3, seed=5).stream(50)]
+    stream_b = [t.correct_action for t in TicketGenerator(alpha=0.3, seed=5).stream(50)]
+    assert stream_a == stream_b
+
+
+def test_ticket_generator_alpha_zero_never_overrides():
+    gen = TicketGenerator(alpha=0.0, seed=5)
+    tickets = list(gen.stream(200))
+    assert all(not t.is_override for t in tickets)
+
+
+def test_ticket_generator_actions_are_within_action_space():
+    gen = TicketGenerator(alpha=0.5, seed=5)
+    for ticket in gen.stream(30):
+        assert ticket.correct_action in gen.action_space
+
+
+def test_ticket_generator_step_field_matches_position_in_stream():
+    gen = TicketGenerator(alpha=0.2, seed=5)
+    tickets = list(gen.stream(10))
+    assert [t.step for t in tickets] == list(range(10))
+
+
+def test_ticket_generator_drift_period_toggles_override_regime():
+    # single tenant, base regime = override (alpha=1.0), drift_period=10:
+    # steps 0-9 -> unflipped (True), 10-19 -> flipped (False), 20+ -> True again
+    gen = TicketGenerator(alpha=1.0, seed=9, n_tenants=1, drift_period=10)
+    tenant_id = next(iter(gen.tenants))
+    regimes = [gen._current_tenant(tenant_id, step).override for step in (0, 5, 10, 15, 20)]
+    assert regimes == [True, True, False, False, True]
+
+
+def test_ticket_generator_no_drift_period_means_static_regime():
+    gen = TicketGenerator(alpha=1.0, seed=9, n_tenants=1, drift_period=None)
+    tenant_id = next(iter(gen.tenants))
+    regimes = [gen._current_tenant(tenant_id, step).override for step in (0, 50, 500)]
+    assert regimes == [True, True, True]

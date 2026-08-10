@@ -136,3 +136,72 @@ def resolve_correct_action(
         effective_topic = mismatch_perm[topic_id]
         return default_action_map[effective_topic]
     return default_action_map[topic_id]
+
+
+from typing import Iterator
+
+
+@dataclass(frozen=True)
+class Ticket:
+    step: int
+    tenant_id: str
+    topic_id: int
+    text: str
+    correct_action: str
+    is_override: bool
+
+
+class TicketGenerator:
+    """Sequential ticket stream with a controllable similarity/utility
+    mismatch (alpha) and an optional drift schedule (for Stage 5's H2:
+    recurring/circular concept test)."""
+
+    def __init__(
+        self,
+        alpha: float,
+        n_tenants: int = 40,
+        seed: int = 0,
+        drift_period: int | None = None,
+    ):
+        self.alpha = alpha
+        self.drift_period = drift_period
+        self.default_action_map = build_default_action_map(seed=seed)
+        self.mismatch_perm = build_mismatch_permutation(seed=seed + 1)
+        self.tenants: dict[str, Tenant] = {
+            t.tenant_id: t for t in build_tenants(n_tenants, alpha, seed=seed + 2)
+        }
+        self._rng = np.random.default_rng(seed + 3)
+        self._tenant_ids = list(self.tenants.keys())
+
+    @property
+    def action_space(self) -> list[str]:
+        return list(ACTION_LABELS)
+
+    def _current_tenant(self, tenant_id: str, step: int) -> Tenant:
+        base = self.tenants[tenant_id]
+        if self.drift_period is None:
+            return base
+        flips = step // self.drift_period
+        override = base.override if flips % 2 == 0 else not base.override
+        return Tenant(tenant_id=base.tenant_id, override=override)
+
+    def sample(self, step: int) -> Ticket:
+        tenant_id = self._rng.choice(self._tenant_ids)
+        topic_id = int(self._rng.integers(0, N_TOPICS))
+        tenant = self._current_tenant(tenant_id, step)
+        text = render_ticket_text(topic_id, tenant_id, self._rng)
+        correct_action = resolve_correct_action(
+            topic_id, tenant, self.default_action_map, self.mismatch_perm
+        )
+        return Ticket(
+            step=step,
+            tenant_id=tenant_id,
+            topic_id=topic_id,
+            text=text,
+            correct_action=correct_action,
+            is_override=tenant.override,
+        )
+
+    def stream(self, n_steps: int) -> Iterator[Ticket]:
+        for step in range(n_steps):
+            yield self.sample(step)
