@@ -2,7 +2,10 @@
 similarity from decision utility, using the real embedding model that
 Stage 3's Semantic-RAG and Decision-Aware memory will both share.
 
-Run directly: `uv run python env/manipulation_check.py`
+Run directly: `uv run python -m env.manipulation_check`
+(module form required — running the file path directly puts env/ itself on
+sys.path instead of the repo root, breaking the `from env.generator import`
+below)
 """
 import matplotlib
 matplotlib.use("Agg")  # headless — no display available when run via CLI/CI
@@ -19,6 +22,7 @@ from env.generator import TicketGenerator
 SWEEP_ALPHAS = [0.0, 0.15, 0.3, 0.5, 0.7]
 N_TICKETS = 300
 N_PAIRS = 3000
+N_TENANTS = 300
 OUTPUT_DIR = Path(__file__).parent / "manipulation_check_output"
 
 
@@ -31,7 +35,7 @@ def compute_similarity_action_correlation(
 ) -> float:
     """Spearman rho between pairwise cosine similarity and whether the two
     tickets share the same correct_action, over N_PAIRS random pairs."""
-    generator = TicketGenerator(alpha=alpha, seed=seed)
+    generator = TicketGenerator(alpha=alpha, seed=seed, n_tenants=N_TENANTS)
     tickets = [generator.sample(step) for step in range(n_tickets)]
     embeddings = encoder.encode([t.text for t in tickets])
 
@@ -53,7 +57,7 @@ def compute_similarity_action_correlation(
 def check_cross_topic_same_action_pairs(alpha: float, seed: int, n_tickets: int = N_TICKETS) -> int:
     """Gate requirement: under override, dissimilar (different-topic)
     tickets sharing the same correct_action must actually exist."""
-    generator = TicketGenerator(alpha=alpha, seed=seed)
+    generator = TicketGenerator(alpha=alpha, seed=seed, n_tenants=N_TENANTS)
     tickets = [generator.sample(step) for step in range(n_tickets)]
     count = sum(
         1

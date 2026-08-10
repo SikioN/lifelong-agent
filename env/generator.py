@@ -166,9 +166,22 @@ class TicketGenerator:
         self.alpha = alpha
         self.drift_period = drift_period
         self.default_action_map = build_default_action_map(seed=seed)
-        self.mismatch_perm = build_mismatch_permutation(seed=seed + 1)
         self.tenants: dict[str, Tenant] = {
             t.tenant_id: t for t in build_tenants(n_tenants, alpha, seed=seed + 2)
+        }
+        # Each tenant gets its own independently-drawn derangement, rather
+        # than sharing one global mismatch_perm. A single shared perm makes
+        # default_action_map ∘ mismatch_perm a *fixed* bijection topic->action
+        # for every override tenant, so similarity still fully predicts
+        # action-agreement between any two override tenants' tickets. With
+        # per-tenant perms, that composition differs tenant-to-tenant, which
+        # decouples similarity from action-agreement across the population.
+        # Built up front for every tenant (not just base-override ones) so a
+        # tenant that flips into override via drift_period always has one
+        # available (see _current_tenant).
+        self.tenant_mismatch_perms: dict[str, dict[int, int]] = {
+            tenant_id: build_mismatch_permutation(seed=seed + 1000 + i)
+            for i, tenant_id in enumerate(self.tenants.keys())
         }
         self._rng = np.random.default_rng(seed + 3)
         self._tenant_ids = list(self.tenants.keys())
@@ -191,7 +204,10 @@ class TicketGenerator:
         tenant = self._current_tenant(tenant_id, step)
         text = render_ticket_text(topic_id, tenant_id, self._rng)
         correct_action = resolve_correct_action(
-            topic_id, tenant, self.default_action_map, self.mismatch_perm
+            topic_id,
+            tenant,
+            self.default_action_map,
+            self.tenant_mismatch_perms[tenant_id],
         )
         return Ticket(
             step=step,
