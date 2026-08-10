@@ -42,3 +42,62 @@ def build_mismatch_permutation(seed: int) -> dict[int, int]:
     rng = np.random.default_rng(seed)
     derangement = _random_derangement(N_TOPICS, rng)
     return {topic_id: derangement[topic_id] for topic_id in range(N_TOPICS)}
+
+
+TOPIC_TEMPLATES: dict[int, list[str]] = {
+    0: [  # billing_dispute
+        "I was charged twice for the same order and need this fixed.",
+        "There's a charge on my statement I don't recognize.",
+        "My invoice total doesn't match what I was quoted.",
+        "I noticed a duplicate transaction on my card this week.",
+    ],
+    1: [  # password_reset
+        "I can't log into my account, the password reset link isn't arriving.",
+        "My login keeps failing even after I reset my password.",
+        "I'm locked out of my account and need help getting back in.",
+        "The reset email for my password never showed up.",
+    ],
+    2: [  # data_export_request
+        "I need a full export of my account data for my records.",
+        "Can you send me a copy of all the data stored under my account?",
+        "I'd like to download my complete usage history.",
+        "Please provide an export of everything associated with my account.",
+    ],
+    3: [  # account_deletion
+        "I want to permanently close my account and remove my data.",
+        "Please delete my account, I no longer want to use the service.",
+        "I'd like to cancel and have my account fully removed.",
+        "Can you shut down my account and erase my information?",
+    ],
+    4: [  # refund_request
+        "I'd like a refund for a purchase that didn't work as expected.",
+        "The item I bought was defective, I want my money back.",
+        "Please refund my last payment, I was not satisfied.",
+        "I'm requesting a refund since the service didn't meet expectations.",
+    ],
+    5: [  # shipping_delay
+        "My order was supposed to arrive last week and still hasn't shown up.",
+        "The tracking hasn't updated in days and my package is late.",
+        "I'm still waiting on a delivery that's well past the estimated date.",
+        "My shipment seems stuck somewhere and hasn't moved.",
+    ],
+    6: [  # feature_request
+        "It would be great if the app supported dark mode.",
+        "Could you add the ability to export reports as PDF?",
+        "I'd love to see keyboard shortcuts added to the editor.",
+        "Please consider adding a bulk-edit option to the dashboard.",
+    ],
+    7: [  # bug_report
+        "The app crashes every time I try to open the settings page.",
+        "I found a bug where the totals don't add up correctly.",
+        "The page freezes whenever I upload a large file.",
+        "There's a glitch that logs me out randomly during use.",
+    ],
+}
+
+
+def render_ticket_text(topic_id: int, tenant_id: str, rng: np.random.Generator) -> str:
+    """Render ticket body + a low-salience tenant marker as a trailing
+    signature line (not the first line, per PLAN.md's tenant-salience risk)."""
+    template = rng.choice(TOPIC_TEMPLATES[topic_id])
+    return f"{template}\n\n— submitted via support portal (ref: {tenant_id})"

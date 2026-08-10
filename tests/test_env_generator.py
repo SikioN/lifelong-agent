@@ -44,3 +44,34 @@ def test_mismatch_permutation_is_a_derangement():
 
 def test_mismatch_permutation_is_deterministic_given_seed():
     assert build_mismatch_permutation(seed=7) == build_mismatch_permutation(seed=7)
+
+
+from env.generator import TOPIC_TEMPLATES, render_ticket_text
+
+
+def test_topic_templates_cover_every_topic_with_multiple_variants():
+    assert set(TOPIC_TEMPLATES.keys()) == set(range(N_TOPICS))
+    for topic_id, templates in TOPIC_TEMPLATES.items():
+        assert len(templates) >= 3, f"topic {topic_id} needs paraphrase variety"
+        assert len(set(templates)) == len(templates)  # no duplicate templates
+
+
+def test_render_ticket_text_uses_a_topic_template():
+    rng = np.random.default_rng(0)
+    text = render_ticket_text(topic_id=1, tenant_id="T0001", rng=rng)
+    body = text.split("\n\n")[0]
+    assert body in TOPIC_TEMPLATES[1]
+
+
+def test_render_ticket_text_tenant_marker_is_low_salience():
+    rng = np.random.default_rng(0)
+    text = render_ticket_text(topic_id=0, tenant_id="T0042", rng=rng)
+    lines = [line for line in text.split("\n") if line.strip()]
+    assert "T0042" not in lines[0], "tenant id must not appear in the first line"
+    assert "T0042" in text, "tenant id must still be present somewhere"
+
+
+def test_render_ticket_text_is_deterministic_given_rng_state():
+    text_a = render_ticket_text(topic_id=2, tenant_id="T0001", rng=np.random.default_rng(5))
+    text_b = render_ticket_text(topic_id=2, tenant_id="T0001", rng=np.random.default_rng(5))
+    assert text_a == text_b
