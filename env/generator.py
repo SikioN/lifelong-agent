@@ -101,3 +101,38 @@ def render_ticket_text(topic_id: int, tenant_id: str, rng: np.random.Generator) 
     signature line (not the first line, per PLAN.md's tenant-salience risk)."""
     template = rng.choice(TOPIC_TEMPLATES[topic_id])
     return f"{template}\n\n— submitted via support portal (ref: {tenant_id})"
+
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Tenant:
+    tenant_id: str
+    override: bool  # static regime: does this tenant's traffic use the mismatch permutation?
+
+
+def build_tenants(n_tenants: int, alpha: float, seed: int) -> list[Tenant]:
+    """alpha is the traffic-weighted fraction of tenants in override regime.
+    Regime is static per tenant (not per-ticket) so it's learnable in-context
+    across a tenant's history — this is what memory is supposed to exploit."""
+    rng = np.random.default_rng(seed)
+    tenants = []
+    for i in range(n_tenants):
+        tenant_id = f"T{i:04d}"
+        override = bool(rng.random() < alpha)
+        tenants.append(Tenant(tenant_id=tenant_id, override=override))
+    return tenants
+
+
+def resolve_correct_action(
+    topic_id: int,
+    tenant: Tenant,
+    default_action_map: dict[int, str],
+    mismatch_perm: dict[int, int],
+) -> str:
+    """The ground-truth label the policy/memory system is trying to predict."""
+    if tenant.override:
+        effective_topic = mismatch_perm[topic_id]
+        return default_action_map[effective_topic]
+    return default_action_map[topic_id]

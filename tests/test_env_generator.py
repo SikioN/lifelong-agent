@@ -75,3 +75,45 @@ def test_render_ticket_text_is_deterministic_given_rng_state():
     text_a = render_ticket_text(topic_id=2, tenant_id="T0001", rng=np.random.default_rng(5))
     text_b = render_ticket_text(topic_id=2, tenant_id="T0001", rng=np.random.default_rng(5))
     assert text_a == text_b
+
+
+from env.generator import Tenant, build_tenants, resolve_correct_action
+
+
+def test_build_tenants_returns_requested_count_with_unique_ids():
+    tenants = build_tenants(n_tenants=40, alpha=0.3, seed=1)
+    assert len(tenants) == 40
+    assert len({t.tenant_id for t in tenants}) == 40
+
+
+def test_build_tenants_override_fraction_matches_alpha_at_scale():
+    tenants = build_tenants(n_tenants=3000, alpha=0.3, seed=1)
+    frac_override = sum(t.override for t in tenants) / len(tenants)
+    assert abs(frac_override - 0.3) < 0.03
+
+
+def test_build_tenants_alpha_zero_means_no_override():
+    tenants = build_tenants(n_tenants=200, alpha=0.0, seed=1)
+    assert all(not t.override for t in tenants)
+
+
+def test_build_tenants_alpha_one_means_all_override():
+    tenants = build_tenants(n_tenants=200, alpha=1.0, seed=1)
+    assert all(t.override for t in tenants)
+
+
+def test_resolve_correct_action_default_regime_uses_direct_mapping():
+    default_map = build_default_action_map(seed=42)
+    perm = build_mismatch_permutation(seed=43)
+    tenant = Tenant(tenant_id="T0", override=False)
+    assert resolve_correct_action(0, tenant, default_map, perm) == default_map[0]
+
+
+def test_resolve_correct_action_override_regime_uses_permuted_mapping():
+    default_map = build_default_action_map(seed=42)
+    perm = build_mismatch_permutation(seed=43)
+    tenant = Tenant(tenant_id="T0", override=True)
+    expected = default_map[perm[0]]
+    assert resolve_correct_action(0, tenant, default_map, perm) == expected
+    # perm has no fixed points (Task 1), so override always changes the result
+    assert resolve_correct_action(0, tenant, default_map, perm) != default_map[0]
