@@ -1,0 +1,297 @@
+\begin{thebibliography}{53}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Abel et~al.(2017)Abel, Hershkowitz, and Littman]{abel2017nearoptimalbehaviorapproximate}
+David Abel, D.~Ellis Hershkowitz, and Michael~L. Littman.
+\newblock Near optimal behavior via approximate state abstraction, 2017.
+\newblock URL \url{https://arxiv.org/abs/1701.04113}.
+
+\bibitem[Abel et~al.(2018)Abel, Arumugam, Lehnert, and Littman]{abel2018lifelong}
+David Abel, Dilip Arumugam, Lucas Lehnert, and Michael Littman.
+\newblock State abstractions for lifelong reinforcement learning.
+\newblock In \emph{Proceedings of the 35th International Conference on Machine Learning}, 2018.
+
+\bibitem[Chhikara et~al.(2025)Chhikara, Khant, Aryan, Singh, and Yadav]{chhikara2025mem0buildingproductionreadyai}
+Prateek Chhikara, Dev Khant, Saket Aryan, Taranjeet Singh, and Deshraj Yadav.
+\newblock Mem0: Building production-ready ai agents with scalable long-term memory, 2025.
+\newblock URL \url{https://arxiv.org/abs/2504.19413}.
+
+\bibitem[Du(2026)]{du2026memoryautonomousllmagentsmechanisms}
+Pengfei Du.
+\newblock Memory for autonomous {LLM} agents:mechanisms, evaluation, and emerging frontiers, 2026.
+\newblock URL \url{https://arxiv.org/abs/2603.07670}.
+
+\bibitem[Du et~al.(2026)Du, Wang, Xiang, Wang, Huang, XUE, Liang, Zeng, Mi, Bai, Shang, Pan, Jiang, and Wong]{du2026memoryt}
+Yiming Du, Baojun Wang, Yifan Xiang, Zhaowei Wang, Wenyu Huang, Boyang XUE, Bin Liang, Xingshan Zeng, Fei Mi, Haoli Bai, Lifeng Shang, Jeff~Z. Pan, Yuxin Jiang, and Kam-Fai Wong.
+\newblock Memory-t1: Reinforcement learning for temporal reasoning in multi-session agents.
+\newblock In \emph{The Fourteenth International Conference on Learning Representations}, 2026.
+\newblock URL \url{https://openreview.net/forum?id=vQf2YR2Kpd}.
+
+\bibitem[Ferns et~al.(2011)Ferns, Panangaden, and Precup]{Bisimulation11Ferns}
+Norm Ferns, Prakash Panangaden, and Doina Precup.
+\newblock Bisimulation metrics for continuous markov decision processes.
+\newblock \emph{SIAM Journal on Computing}, 40\penalty0 (6):\penalty0 1662--1714, 2011.
+\newblock \doi{10.1137/10080484X}.
+\newblock URL \url{https://doi.org/10.1137/10080484X}.
+
+\bibitem[Gentile et~al.(2014)Gentile, Li, and Zappella]{gentile2014onlineclusteringbandits}
+Claudio Gentile, Shuai Li, and Giovanni Zappella.
+\newblock Online clustering of bandits, 2014.
+\newblock URL \url{https://arxiv.org/abs/1401.8257}.
+
+\bibitem[Givan et~al.(2003)Givan, Dean, and Greig]{GIVAN2003163}
+Robert Givan, Thomas Dean, and Matthew Greig.
+\newblock Equivalence notions and model minimization in markov decision processes.
+\newblock \emph{Artificial Intelligence}, 147\penalty0 (1):\penalty0 163--223, 2003.
+\newblock ISSN 0004-3702.
+\newblock \doi{https://doi.org/10.1016/S0004-3702(02)00376-4}.
+\newblock URL \url{https://www.sciencedirect.com/science/article/pii/S0004370202003764}.
+\newblock Planning with Uncertainty and Incomplete Information.
+
+\bibitem[Gutiérrez et~al.(2025)Gutiérrez, Shu, Gu, Yasunaga, and Su]{gutiérrez2025hipporagneurobiologicallyinspiredlongterm}
+Bernal~Jiménez Gutiérrez, Yiheng Shu, Yu~Gu, Michihiro Yasunaga, and Yu~Su.
+\newblock Hipporag: Neurobiologically inspired long-term memory for large language models, 2025.
+\newblock URL \url{https://arxiv.org/abs/2405.14831}.
+
+\bibitem[He et~al.(2026)He, Wang, Zhi, Hu, Chen, Yin, Chen, Wu, Ouyang, Wang, Pei, McAuley, Choi, and Pentland]{he2026memoryarenabenchmarkingagentmemory}
+Zexue He, Yu~Wang, Churan Zhi, Yuanzhe Hu, Tzu-Ping Chen, Lang Yin, Ze~Chen, Tong~Arthur Wu, Siru Ouyang, Zihan Wang, Jiaxin Pei, Julian McAuley, Yejin Choi, and Alex Pentland.
+\newblock Memoryarena: Benchmarking agent memory in interdependent multi-session agentic tasks, 2026.
+\newblock URL \url{https://arxiv.org/abs/2602.16313}.
+
+\bibitem[Hu et~al.(2026{\natexlab{a}})Hu, Wang, and McAuley]{hu2026evaluating}
+Yuanzhe Hu, Yu~Wang, and Julian McAuley.
+\newblock Evaluating memory in {LLM} agents via incremental multi-turn interactions.
+\newblock In \emph{The Fourteenth International Conference on Learning Representations}, 2026{\natexlab{a}}.
+\newblock URL \url{https://openreview.net/forum?id=DT7JyQC3MR}.
+
+\bibitem[Hu et~al.(2026{\natexlab{b}})Hu, Liu, Yue, Zhang, Liu, Zhu, Lin, Guo, Dou, Xi, Jin, Tan, Yin, Liu, Zhang, Sun, Zhu, Sun, Peng, Cheng, Fan, Guo, Yu, Zhou, Hu, Huo, Wang, Niu, Wang, Yin, Hu, Liao, Li, Wang, Zhou, Liu, Cheng, Zhang, Gui, Pan, Zhang, Torr, Dou, Wen, Huang, Jiang, and Yan]{hu2026memoryageaiagents}
+Yuyang Hu, Shichun Liu, Yanwei Yue, Guibin Zhang, Boyang Liu, Fangyi Zhu, Jiahang Lin, Honglin Guo, Shihan Dou, Zhiheng Xi, Senjie Jin, Jiejun Tan, Yanbin Yin, Jiongnan Liu, Zeyu Zhang, Zhongxiang Sun, Yutao Zhu, Hao Sun, Boci Peng, Zhenrong Cheng, Xuanbo Fan, Jiaxin Guo, Xinlei Yu, Zhenhong Zhou, Zewen Hu, Jiahao Huo, Junhao Wang, Yuwei Niu, Yu~Wang, Zhenfei Yin, Xiaobin Hu, Yue Liao, Qiankun Li, Kun Wang, Wangchunshu Zhou, Yixin Liu, Dawei Cheng, Qi~Zhang, Tao Gui, Shirui Pan, Yan Zhang, Philip Torr, Zhicheng Dou, Ji-Rong Wen, Xuanjing Huang, Yu-Gang Jiang, and Shuicheng Yan.
+\newblock Memory in the age of ai agents, 2026{\natexlab{b}}.
+\newblock URL \url{https://arxiv.org/abs/2512.13564}.
+
+\bibitem[Huo et~al.(2026)Huo, Lu, Zhang, Chen, and Lin]{huo2026atommemlearnabledynamic}
+Yupeng Huo, Yaxi Lu, Zhong Zhang, Haotian Chen, and Yankai Lin.
+\newblock Atommem : Learnable dynamic agentic memory with atomic memory operation, 2026.
+\newblock URL \url{https://arxiv.org/abs/2601.08323}.
+
+\bibitem[Kang et~al.(2025)Kang, Ji, Zhao, and Bai]{kang-etal-2025-memory}
+Jiazheng Kang, Mingming Ji, Zhe Zhao, and Ting Bai.
+\newblock Memory {OS} of {AI} agent.
+\newblock In Christos Christodoulopoulos, Tanmoy Chakraborty, Carolyn Rose, and Violet Peng, editors, \emph{Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing}, pages 25961--25970, Suzhou, China, November 2025. Association for Computational Linguistics.
+\newblock ISBN 979-8-89176-332-6.
+\newblock \doi{10.18653/v1/2025.emnlp-main.1318}.
+\newblock URL \url{https://aclanthology.org/2025.emnlp-main.1318/}.
+
+\bibitem[{LangChain AI}(2024)]{langchain_langmem_2024}
+{LangChain AI}.
+\newblock Langmem: Long-term memory sdk for {LLM} agents, 2024.
+\newblock URL \url{https://github.com/langchain-ai/langmem}.
+
+\bibitem[Latimer et~al.(2025)Latimer, Boschi, Neeser, Bartholomew, Srivastava, Wang, and Ramakrishnan]{latimer2025hindsight2020buildingagent}
+Chris Latimer, Nicoló Boschi, Andrew Neeser, Chris Bartholomew, Gaurav Srivastava, Xuan Wang, and Naren Ramakrishnan.
+\newblock Hindsight is 20/20: Building agent memory that retains, recalls, and reflects, 2025.
+\newblock URL \url{https://arxiv.org/abs/2512.12818}.
+
+\bibitem[Lee et~al.(2026)Lee, Nair, Zhang, Lee, Khattab, and Finn]{lee2026metaharnessendtoendoptimizationmodel}
+Yoonho Lee, Roshen Nair, Qizheng Zhang, Kangwook Lee, Omar Khattab, and Chelsea Finn.
+\newblock Meta-harness: End-to-end optimization of model harnesses, 2026.
+\newblock URL \url{https://arxiv.org/abs/2603.28052}.
+
+\bibitem[Lewis et~al.(2021)Lewis, Perez, Piktus, Petroni, Karpukhin, Goyal, Küttler, Lewis, tau Yih, Rocktäschel, Riedel, and Kiela]{lewis2021retrievalaugmentedgenerationknowledgeintensivenlp}
+Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich Küttler, Mike Lewis, Wen tau Yih, Tim Rocktäschel, Sebastian Riedel, and Douwe Kiela.
+\newblock Retrieval-augmented generation for knowledge-intensive nlp tasks, 2021.
+\newblock URL \url{https://arxiv.org/abs/2005.11401}.
+
+\bibitem[Li et~al.(2006)Li, Walsh, and Littman]{Li2006TowardsAU}
+Lihong Li, Thomas~J. Walsh, and Michael~L. Littman.
+\newblock Towards a unified theory of state abstraction for mdps.
+\newblock In \emph{AI\&M}, 2006.
+\newblock URL \url{https://api.semanticscholar.org/CorpusID:245037}.
+
+\bibitem[Li et~al.(2026)Li, Guo, Zhang, Xu, Huang, Liu, Xu, Xu, and Liu]{li2026locomoplusbeyondfactualcognitivememory}
+Yifei Li, Weidong Guo, Lingling Zhang, Rongman Xu, Muye Huang, Hui Liu, Lijiao Xu, Yu~Xu, and Jun Liu.
+\newblock Locomo-plus: Beyond-factual cognitive memory evaluation framework for {LLM} agents, 2026.
+\newblock URL \url{https://arxiv.org/abs/2602.10715}.
+
+\bibitem[Liu et~al.(2023)Liu, Lin, Hewitt, Paranjape, Bevilacqua, Petroni, and Liang]{liu2023lostmiddlelanguagemodels}
+Nelson~F. Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua, Fabio Petroni, and Percy Liang.
+\newblock Lost in the middle: How language models use long contexts, 2023.
+\newblock URL \url{https://arxiv.org/abs/2307.03172}.
+
+\bibitem[Maharana et~al.(2024)Maharana, Lee, Tulyakov, Bansal, Barbieri, and Fang]{maharana-etal-2024-evaluating}
+Adyasha Maharana, Dong-Ho Lee, Sergey Tulyakov, Mohit Bansal, Francesco Barbieri, and Yuwei Fang.
+\newblock Evaluating very long-term conversational memory of {LLM} agents.
+\newblock In Lun-Wei Ku, Andre Martins, and Vivek Srikumar, editors, \emph{Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)}, pages 13851--13870. Association for Computational Linguistics, August 2024.
+\newblock \doi{10.18653/v1/2024.acl-long.747}.
+\newblock URL \url{https://aclanthology.org/2024.acl-long.747/}.
+
+\bibitem[Matula and Beck(1983)]{matula1983smallest}
+David~W. Matula and Leland~L. Beck.
+\newblock Smallest-last ordering and clustering and graph coloring algorithms.
+\newblock \emph{J. ACM}, 30\penalty0 (3):\penalty0 417–427, July 1983.
+\newblock ISSN 0004-5411.
+\newblock \doi{10.1145/2402.322385}.
+\newblock URL \url{https://doi.org/10.1145/2402.322385}.
+
+\bibitem[Nan et~al.(2025)Nan, Ma, Wu, and Chen]{nan2025nemoriselforganizingagentmemory}
+Jiayan Nan, Wenquan Ma, Wenlong Wu, and Yize Chen.
+\newblock Nemori: Self-organizing agent memory inspired by cognitive science, 2025.
+\newblock URL \url{https://arxiv.org/abs/2508.03341}.
+
+\bibitem[Nixon(2026)]{nixon2026myhillnerodetheoremboundedinteraction}
+Anthony~T. Nixon.
+\newblock The myhill-nerode theorem for bounded interaction: Canonical abstractions via agent-bounded indistinguishability, 2026.
+\newblock URL \url{https://arxiv.org/abs/2603.21399}.
+
+\bibitem[Pacelli and Majumdar(2019)]{Task-Driven19Pacelli}
+Vincent Pacelli and Anirudha Majumdar.
+\newblock Task-driven estimation and control via information bottlenecks.
+\newblock In \emph{2019 International Conference on Robotics and Automation (ICRA)}, pages 2061--2067, 2019.
+\newblock \doi{10.1109/ICRA.2019.8794213}.
+
+\bibitem[Packer et~al.(2024)Packer, Wooders, Lin, Fang, Patil, Stoica, and Gonzalez]{packer2024memgptllmsoperatingsystems}
+Charles Packer, Sarah Wooders, Kevin Lin, Vivian Fang, Shishir~G. Patil, Ion Stoica, and Joseph~E. Gonzalez.
+\newblock Memgpt: Towards {LLM}s as operating systems, 2024.
+\newblock URL \url{https://arxiv.org/abs/2310.08560}.
+
+\bibitem[Pan et~al.(2026)Pan, Zou, Guo, Ni, and Zheng]{pan2026naturallanguageagentharnesses}
+Linyue Pan, Lexiao Zou, Shuo Guo, Jingchen Ni, and Hai-Tao Zheng.
+\newblock Natural-language agent harnesses, 2026.
+\newblock URL \url{https://arxiv.org/abs/2603.25723}.
+
+\bibitem[Rafique and Bindschaedler(2026)]{Rafique2026ClawVMHV}
+Mofasshara Rafique and Laurent Bindschaedler.
+\newblock Clawvm: Harness-managed virtual memory for stateful tool-using {LLM} agents.
+\newblock 2026.
+\newblock URL \url{https://api.semanticscholar.org/CorpusID:287432731}.
+
+\bibitem[Rasmussen et~al.(2025)Rasmussen, Paliychuk, Beauvais, Ryan, and Chalef]{rasmussen2025zeptemporalknowledgegraph}
+Preston Rasmussen, Pavlo Paliychuk, Travis Beauvais, Jack Ryan, and Daniel Chalef.
+\newblock Zep: A temporal knowledge graph architecture for agent memory, 2025.
+\newblock URL \url{https://arxiv.org/abs/2501.13956}.
+
+\bibitem[Ravindran and Barto(2004)]{ravindran2004approximate}
+Balaraman Ravindran and Andrew~G Barto.
+\newblock Approximate homomorphisms: A framework for non-exact minimization in markov decision processes.
+\newblock 2004.
+
+\bibitem[Rezaei-Shoshtari et~al.(2022)Rezaei-Shoshtari, Zhao, Panangaden, Meger, and Precup]{rezaeishoshtari2022continuousmdphomomorphismshomomorphic}
+Sahand Rezaei-Shoshtari, Rosie Zhao, Prakash Panangaden, David Meger, and Doina Precup.
+\newblock Continuous mdp homomorphisms and homomorphic policy gradient, 2022.
+\newblock URL \url{https://arxiv.org/abs/2209.07364}.
+
+\bibitem[Shen et~al.(2026)Shen, Li, Zhou, and Hu]{shen2026mem2actbenchbenchmarkevaluatinglongterm}
+Yiting Shen, Kun Li, Wei Zhou, and Songlin Hu.
+\newblock Mem2actbench: A benchmark for evaluating long-term memory utilization in task-oriented autonomous agents, 2026.
+\newblock URL \url{https://arxiv.org/abs/2601.19935}.
+
+\bibitem[Shinn et~al.(2023)Shinn, Cassano, Berman, Gopinath, Narasimhan, and Yao]{shinn2023reflexionlanguageagentsverbal}
+Noah Shinn, Federico Cassano, Edward Berman, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao.
+\newblock Reflexion: Language agents with verbal reinforcement learning, 2023.
+\newblock URL \url{https://arxiv.org/abs/2303.11366}.
+
+\bibitem[Shu et~al.(2026)Shu, Jonnalagedda, Gao, Guti{\'e}rrez, Qi, Das, Sun, and Su]{shu2026remem}
+Yiheng Shu, Saisri~Padmaja Jonnalagedda, Xiang Gao, Bernal~Jim{\'e}nez Guti{\'e}rrez, Weijian Qi, Kamalika Das, Huan Sun, and Yu~Su.
+\newblock {REM}em: Reasoning with episodic memory in language agent.
+\newblock In \emph{The Fourteenth International Conference on Learning Representations}, 2026.
+\newblock URL \url{https://openreview.net/forum?id=fugnQxbvMm}.
+
+\bibitem[Simão et~al.(2023)Simão, Suilen, and Jansen]{simão2023safepolicyimprovementpomdps}
+Thiago~D. Simão, Marnix Suilen, and Nils Jansen.
+\newblock Safe policy improvement for pomdps via finite-state controllers, 2023.
+\newblock URL \url{https://arxiv.org/abs/2301.04939}.
+
+\bibitem[Sun(2026)]{Sun2026DecisionCentricDF}
+Wei Sun.
+\newblock Decision-centric design for {LLM} systems.
+\newblock 2026.
+\newblock URL \url{https://api.semanticscholar.org/CorpusID:287021773}.
+
+\bibitem[Tan et~al.(2025)Tan, Zhang, Ma, Chen, Dai, and Dong]{tan2025membenchcomprehensiveevaluationmemory}
+Haoran Tan, Zeyu Zhang, Chen Ma, Xu~Chen, Quanyu Dai, and Zhenhua Dong.
+\newblock Membench: Towards more comprehensive evaluation on the memory of {LLM}-based agents, 2025.
+\newblock URL \url{https://arxiv.org/abs/2506.21605}.
+
+\bibitem[Tang et~al.(2026)Tang, Yu, Xiao, Wen, Li, Zhou, Wang, Wang, Huang, Deng, Sun, and Zhang]{tang2026mnemisdualrouteretrievalhierarchical}
+Zihao Tang, Xin Yu, Ziyu Xiao, Zengxuan Wen, Zelin Li, Jiaxi Zhou, Hualei Wang, Haohua Wang, Haizhen Huang, Weiwei Deng, Feng Sun, and Qi~Zhang.
+\newblock Mnemis: Dual-route retrieval on hierarchical graphs for long-term {LLM} memory, 2026.
+\newblock URL \url{https://arxiv.org/abs/2602.15313}.
+
+\bibitem[Wang et~al.(2023)Wang, Dong, Cheng, Liu, Yan, Gao, and Wei]{NEURIPS2023_ebd82705}
+Weizhi Wang, Li~Dong, Hao Cheng, Xiaodong Liu, Xifeng Yan, Jianfeng Gao, and Furu Wei.
+\newblock Augmenting language models with long-term memory.
+\newblock In A.~Oh, T.~Naumann, A.~Globerson, K.~Saenko, M.~Hardt, and S.~Levine, editors, \emph{Advances in Neural Information Processing Systems}, volume~36, pages 74530--74543. Curran Associates, Inc., 2023.
+\newblock URL \url{https://proceedings.neurips.cc/paper_files/paper/2023/file/ebd82705f44793b6f9ade5a669d0f0bf-Paper-Conference.pdf}.
+
+\bibitem[Wu et~al.(2025)Wu, Wang, Yu, Zhang, Chang, and Yu]{wu2025longmemevalbenchmarkingchatassistants}
+Di~Wu, Hongwei Wang, Wenhao Yu, Yuwei Zhang, Kai-Wei Chang, and Dong Yu.
+\newblock Longmemeval: Benchmarking chat assistants on long-term interactive memory, 2025.
+\newblock URL \url{https://arxiv.org/abs/2410.10813}.
+
+\bibitem[Xu et~al.(2025)Xu, Liang, Mei, Gao, Tan, and Zhang]{xu2025amemagenticmemoryllm}
+Wujiang Xu, Zujie Liang, Kai Mei, Hang Gao, Juntao Tan, and Yongfeng Zhang.
+\newblock A-mem: Agentic memory for {LLM} agents, 2025.
+\newblock URL \url{https://arxiv.org/abs/2502.12110}.
+
+\bibitem[Yao et~al.(2023)Yao, Zhao, Yu, Du, Shafran, Narasimhan, and Cao]{yao2023reactsynergizingreasoningacting}
+Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao.
+\newblock React: Synergizing reasoning and acting in language models, 2023.
+\newblock URL \url{https://arxiv.org/abs/2210.03629}.
+
+\bibitem[Yu et~al.(2026)Yu, Yao, Xie, Tan, Feng, Li, and Wu]{yu2026agenticmemorylearningunified}
+Yi~Yu, Liuyi Yao, Yuexiang Xie, Qingquan Tan, Jiaqi Feng, Yaliang Li, and Libing Wu.
+\newblock Agentic memory: Learning unified long-term and short-term memory management for large language model agents, 2026.
+\newblock URL \url{https://arxiv.org/abs/2601.01885}.
+
+\bibitem[Zhang et~al.(2025)Zhang, Ren, Zhan, Zhou, Wang, Zhu, Zhou, and Yan]{zhang2025memevolvemetaevolutionagentmemory}
+Guibin Zhang, Haotian Ren, Chong Zhan, Zhenhong Zhou, Junhao Wang, He~Zhu, Wangchunshu Zhou, and Shuicheng Yan.
+\newblock Memevolve: Meta-evolution of agent memory systems, 2025.
+\newblock URL \url{https://arxiv.org/abs/2512.18746}.
+
+\bibitem[Zhang et~al.(2026{\natexlab{a}})Zhang, Fu, and YAN]{zhang2026memgen}
+Guibin Zhang, Muxin Fu, and Shuicheng YAN.
+\newblock Memgen: Weaving generative latent memory for self-evolving agents.
+\newblock In \emph{The Fourteenth International Conference on Learning Representations}, 2026{\natexlab{a}}.
+\newblock URL \url{https://openreview.net/forum?id=vI56m4Iu4e}.
+
+\bibitem[Zhang et~al.(2026{\natexlab{b}})Zhang, Long, Bao, Feng, Zhang, Yue, and Wang]{zhang2026memskilllearningevolvingmemory}
+Haozhen Zhang, Quanyu Long, Jianzhu Bao, Tao Feng, Weizhi Zhang, Haodong Yue, and Wenya Wang.
+\newblock Memskill: Learning and evolving memory skills for self-evolving agents, 2026{\natexlab{b}}.
+\newblock URL \url{https://arxiv.org/abs/2602.02474}.
+
+\bibitem[Zhang et~al.(2022)Zhang, Tang, Hao, and Zheng]{zhang2022unifiedpolicyabstractiontheory}
+Min Zhang, Hongyao Tang, Jianye Hao, and Yan Zheng.
+\newblock Towards a unified policy abstraction theory and representation learning approach in markov decision processes, 2022.
+\newblock URL \url{https://arxiv.org/abs/2209.07696}.
+
+\bibitem[Zhang et~al.(2026{\natexlab{c}})Zhang, Shu, Ma, Lin, Wu, and Sang]{zhang2026memoryactionautonomouscontext}
+Yuxiang Zhang, Jiangming Shu, Ye~Ma, Xueyuan Lin, Shangxi Wu, and Jitao Sang.
+\newblock Memory as action: Autonomous context curation for long-horizon agentic tasks, 2026{\natexlab{c}}.
+\newblock URL \url{https://arxiv.org/abs/2510.12635}.
+
+\bibitem[Zhang et~al.(2024)Zhang, Bo, Ma, Li, Chen, Dai, Zhu, Dong, and Wen]{zhang2024surveymemorymechanismlarge}
+Zeyu Zhang, Xiaohe Bo, Chen Ma, Rui Li, Xu~Chen, Quanyu Dai, Jieming Zhu, Zhenhua Dong, and Ji-Rong Wen.
+\newblock A survey on the memory mechanism of large language model based agents, 2024.
+\newblock URL \url{https://arxiv.org/abs/2404.13501}.
+
+\bibitem[Zhou et~al.(2026{\natexlab{a}})Zhou, Chai, Chen, Guo, Shan, Song, Xu, Yang, Yu, Zhang, Zheng, Zhu, Zheng, Zhang, Lou, Zhang, Fu, Wang, Liu, Lin, and Zhang]{zhou2026externalizationllmagentsunified}
+Chenyu Zhou, Huacan Chai, Wenteng Chen, Zihan Guo, Rong Shan, Yuanyi Song, Tianyi Xu, Yingxuan Yang, Aofan Yu, Weiming Zhang, Congming Zheng, Jiachen Zhu, Zeyu Zheng, Zhuosheng Zhang, Xingyu Lou, Changwang Zhang, Zhihui Fu, Jun Wang, Weiwen Liu, Jianghao Lin, and Weinan Zhang.
+\newblock Externalization in {LLM} agents: A unified review of memory, skills, protocols and harness engineering, 2026{\natexlab{a}}.
+\newblock URL \url{https://arxiv.org/abs/2604.08224}.
+
+\bibitem[Zhou and Han(2025)]{zhou2025simplestrongbaselinelongterm}
+Sizhe Zhou and Jiawei Han.
+\newblock A simple yet strong baseline for long-term conversational memory of {LLM} agents, 2025.
+\newblock URL \url{https://arxiv.org/abs/2511.17208}.
+
+\bibitem[Zhou et~al.(2026{\natexlab{b}})Zhou, Qu, Wu, Kim, Prakash, Rus, Low, and Liang]{zhou2026mem}
+Zijian Zhou, Ao~Qu, Zhaoxuan Wu, Sunghwan Kim, Alok Prakash, Daniela Rus, Bryan Kian~Hsiang Low, and Paul~Pu Liang.
+\newblock {MEM}1: Learning to synergize memory and reasoning for efficient long-horizon agents.
+\newblock In \emph{The Fourteenth International Conference on Learning Representations}, 2026{\natexlab{b}}.
+\newblock URL \url{https://openreview.net/forum?id=XY8AaxDSLb}.
+
+\end{thebibliography}

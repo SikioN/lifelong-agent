@@ -2,7 +2,7 @@
 name = "demem-lite"
 version = "0.1.0"
 description = "DeMem-lite: decision-aware memory for lifelong text agents (T-Lab take-home)"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.13"
 dependencies = [
     "torch>=2.2",
     "transformers>=4.40",

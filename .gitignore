@@ -39,6 +39,14 @@ triage/
 /docs/testing.md
 /docs/windows/
 
+# LaTeX build artifacts from compiling docs/materials/arXiv-2605.10870v1/
+docs/materials/arXiv-2605.10870v1/*.aux
+docs/materials/arXiv-2605.10870v1/*.log
+docs/materials/arXiv-2605.10870v1/*.out
+docs/materials/arXiv-2605.10870v1/*.synctex.gz
+docs/materials/arXiv-2605.10870v1/*.pdf
+!docs/materials/arXiv-2605.10870v1/figure/*.pdf
+
 # Eval harness lives in its own repository, cloned into evals/ for local
 # development (see CLAUDE.md / README.md). It is not part of the published
 # plugin, so the whole directory is ignored here.
