@@ -27,6 +27,7 @@ triage/
 /tests/*
 !/tests/test_memory_budget.py
 !/tests/test_manipulation_check.py
+!/tests/test_env_generator.py
 
 # superpowers' own docs/ subtree — docs/materials/ (T-Lab task materials)
 # is NOT ignored and stays part of this project's repo.
