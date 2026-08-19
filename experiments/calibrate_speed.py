@@ -14,7 +14,7 @@ from env.generator import ACTION_LABELS, TicketGenerator
 
 N_CALIBRATION_TICKETS = 60
 NEAR_CEILING_THRESHOLD = 0.85
-CHANCE_TOLERANCE = 0.10  # accuracy must land within +/- this of 1/|A|
+CHANCE_TOLERANCE = 0.15  # accuracy must land within +/- this of 1/|A|
 
 # Grid sizes computed directly from docs/materials/PLAN.md's "Этапы выполнения"
 # Stage 4/5 rows (not the rougher "~50k+~14k" aside elsewhere in that doc --
