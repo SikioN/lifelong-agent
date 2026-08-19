@@ -70,3 +70,48 @@ class ClosedSetPolicy:
     def predict(self, prompt: str, candidates: list[str]) -> str:
         scores = self.score_candidates(prompt, candidates)
         return candidates[int(np.argmax(scores))]
+
+    @torch.no_grad()
+    def score_candidates_batch(self, prompts: list[str], candidates: list[str]) -> np.ndarray:
+        """Same scoring as score_candidates, but for many prompts against the
+        SAME fixed candidate set, in one padded batched forward pass. This is
+        the throughput-critical path for the Stage 4/5 grid: right-padding +
+        causal attention means padded positions never influence any real
+        token's prediction, so per-row prompt/candidate lengths (tracked
+        exactly, pre-padding) are all that's needed to index correctly."""
+        pad_id = self.tokenizer.pad_token_id
+        sequences: list[list[int]] = []
+        prompt_lens: list[int] = []
+        cand_lens: list[int] = []
+        for prompt in prompts:
+            prompt_ids = self.tokenizer(prompt, add_special_tokens=False)["input_ids"]
+            for candidate in candidates:
+                cand_ids = self._candidate_token_ids(prompt, candidate)
+                sequences.append(prompt_ids + cand_ids)
+                prompt_lens.append(len(prompt_ids))
+                cand_lens.append(len(cand_ids))
+
+        max_len = max(len(seq) for seq in sequences)
+        batch = torch.full((len(sequences), max_len), pad_id, dtype=torch.long)
+        attention_mask = torch.zeros((len(sequences), max_len), dtype=torch.long)
+        for row, seq in enumerate(sequences):
+            batch[row, : len(seq)] = torch.tensor(seq)
+            attention_mask[row, : len(seq)] = 1
+        batch = batch.to(self.device)
+        attention_mask = attention_mask.to(self.device)
+
+        logits = self.model(input_ids=batch, attention_mask=attention_mask).logits
+        log_probs = torch.log_softmax(logits.float(), dim=-1)
+
+        flat_scores = np.zeros(len(sequences), dtype=np.float64)
+        for row in range(len(sequences)):
+            n_prompt = prompt_lens[row]
+            n_cand = cand_lens[row]
+            total = 0.0
+            for offset in range(n_cand):
+                position = n_prompt + offset - 1
+                token_id = batch[row, n_prompt + offset].item()
+                total += log_probs[row, position, token_id].item()
+            flat_scores[row] = total
+
+        return flat_scores.reshape(len(prompts), len(candidates))

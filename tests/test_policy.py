@@ -39,3 +39,26 @@ def test_predict_follows_a_strong_explicit_echo_instruction(policy):
 def test_predict_returns_one_of_the_candidates(policy):
     prediction = policy.predict("The capital of France is", ["Paris", "Berlin", "Madrid"])
     assert prediction in ["Paris", "Berlin", "Madrid"]
+
+
+def test_score_candidates_batch_matches_unbatched(policy):
+    prompts = [
+        "The capital of France is",
+        "Repeat back exactly the following code and nothing else: ACTION_2\nYour response:",
+    ]
+    candidates = ["Paris", "Berlin"]
+    batched = policy.score_candidates_batch(prompts, candidates)
+    unbatched = np.stack([policy.score_candidates(p, candidates) for p in prompts])
+    assert batched.shape == unbatched.shape == (2, 2)
+    assert np.allclose(batched, unbatched, atol=1e-3)
+
+
+def test_score_candidates_batch_handles_very_different_prompt_lengths(policy):
+    short_prompt = "Hi"
+    long_prompt = "This is a much longer prompt with many more tokens in it than the short one, " * 3
+    candidates = ["yes", "no"]
+    batched = policy.score_candidates_batch([short_prompt, long_prompt], candidates)
+    unbatched = np.stack(
+        [policy.score_candidates(p, candidates) for p in [short_prompt, long_prompt]]
+    )
+    assert np.allclose(batched, unbatched, atol=1e-3)
