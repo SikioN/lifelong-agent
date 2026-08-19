@@ -47,7 +47,9 @@ Once calibration is validated, the same script sweeps `MODEL_NAME` across a smal
 
 ### 3. Grid-time budget, restored and re-grounded
 
-`TOTAL_GRID_STEPS` reverts to `177,500`, computed the same way Task 4 already did (verbatim from `PLAN.md`'s Stage 4/5 table — 5×2×5×5×400 + 1×4×5×5×400 + 2×5×5×750). `GRID_TIME_BUDGET_SECONDS` is redefined against a real constraint: a single Kaggle GPU session's actual wall-clock limit, not the original plan's CPU/MPS-era 4-hour guess and not the rogue commit's unmotivated 20 hours. **Open question for the human partner to confirm** (Kaggle's exact free-tier session/quota numbers change over time and are best confirmed against the account in use, not assumed): if the projected grid time exceeds one session's limit, the design's fallback is to split the grid across multiple kernel runs (partitioned by, e.g., alpha or seed) rather than inflating the budget constant to make one run fit.
+`TOTAL_GRID_STEPS` reverts to `177,500`, computed the same way Task 4 already did (verbatim from `PLAN.md`'s Stage 4/5 table — 5×2×5×5×400 + 1×4×5×5×400 + 2×5×5×750). `GRID_TIME_BUDGET_SECONDS` is redefined against a real constraint: a single Kaggle GPU session's actual wall-clock limit, not the original plan's CPU/MPS-era 4-hour guess and not the rogue commit's unmotivated 20 hours.
+
+**Resolved:** human partner confirmed a free Kaggle account with `GPU_T4x2` available. Free-tier Kaggle notebooks cap a single session at **9 hours** of GPU runtime, with a separate **~30 GPU-hours/week** account quota (the weekly figure bounds how many sweep/backbone-comparison runs are affordable in a week, not any single run's time budget). `GRID_TIME_BUDGET_SECONDS = 9 * 3600 = 32,400`. If the projected grid time exceeds this, the design's fallback is to split the grid across multiple kernel runs (partitioned by, e.g., alpha or seed) rather than inflating the budget constant to make one run fit. The exact 9h figure is a platform limit that can drift — the first real Kaggle execution task should note the actual session behavior observed and flag a mismatch rather than assume this number stays exact forever.
 
 ### 4. Kaggle orchestration tooling
 
@@ -80,6 +82,6 @@ Add a new, clearly labeled architectural-amendment entry to `docs/materials/PLAN
 
 ## Risks / open questions
 
-- **Kaggle session/quota limits** need confirming against the actual account before `GRID_TIME_BUDGET_SECONDS` is finalized — flagged above, not assumed.
+- **Kaggle session limit (9h) is a published platform figure, not verified against this specific account.** `GRID_TIME_BUDGET_SECONDS` is set from it (see section 3); the first real Kaggle execution task should note whether observed session behavior matches and flag it if not, rather than assume the figure is exact forever.
 - Calibrating on a neutral/empty prompt assumes the bias is prompt-independent (a pure token-frequency prior). If `diagnose_label_bias.py` shows the bias varies with ticket content instead, calibration-on-empty-prompt won't fully close the gap — the diagnostic step exists specifically to catch this before committing to the fix.
 - Kaggle's Docker image's preinstalled package versions may not exactly match this project's pinned `pyproject.toml` versions (e.g., a different `transformers` release) — `kernel_template.py` should pin explicitly rather than trust whatever's preinstalled, but exact version pins should be checked against what's actually available on the image at implementation time.
