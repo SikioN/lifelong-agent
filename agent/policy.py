@@ -35,7 +35,7 @@ class ClosedSetPolicy:
         # Use bf16/fp16 and auto device mapping for CUDA to support large models on Kaggle.
         if self.device == "cuda":
             dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-            device_map = "auto"
+            device_map = "cuda:0"
         else:
             dtype = torch.float32
             device_map = None
