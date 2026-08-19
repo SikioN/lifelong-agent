@@ -39,4 +39,4 @@ also contains unrelated third-party (superpowers) test files.
 
 ## Status
 
-Stage 0 — repo scaffold.
+Stage 2 — policy wrapper + speed calibration gate passed.
