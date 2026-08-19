@@ -88,7 +88,7 @@ class ClosedSetPolicy:
         return candidates[int(np.argmax(scores))]
 
     @torch.no_grad()
-    def score_candidates_batch(self, prompts: list[str], candidates: list[str], chunk_size: int = 128) -> np.ndarray:
+    def score_candidates_batch(self, prompts: list[str], candidates: list[str], chunk_size: int = 16) -> np.ndarray:
         """Same scoring as score_candidates, but for many prompts against the
         SAME fixed candidate set, in one padded batched forward pass. This is
         the throughput-critical path for the Stage 4/5 grid: right-padding +
