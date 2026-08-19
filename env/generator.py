@@ -95,6 +95,17 @@ TOPIC_TEMPLATES: dict[int, list[str]] = {
     ],
 }
 
+TOPIC_NAMES: dict[int, str] = {
+    0: "billing or invoice dispute",
+    1: "password or login reset",
+    2: "data export request",
+    3: "account deletion request",
+    4: "refund request",
+    5: "shipping delay",
+    6: "feature request",
+    7: "bug report",
+}
+
 
 def render_ticket_text(topic_id: int, tenant_id: str, rng: np.random.Generator) -> str:
     """Render ticket body + a low-salience tenant marker as a trailing
