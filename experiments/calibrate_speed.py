@@ -16,18 +16,16 @@ N_CALIBRATION_TICKETS = 60
 NEAR_CEILING_THRESHOLD = 0.85
 CHANCE_TOLERANCE = 0.15  # accuracy must land within +/- this of 1/|A|
 
-# Grid sizes computed directly from docs/materials/PLAN.md's "Этапы выполнения"
-# Stage 4/5 rows (not the rougher "~50k+~14k" aside elsewhere in that doc --
-# this calibration is exactly what should be trusted if the two disagree):
-#   Stage 4 main:     alpha(5) x K(2)              x method(5) x seed(5) x T(400)
-#   Stage 4 frontier:            K-frontier(4)      x method(5) x seed(5) x T(400)  [1 fixed high alpha]
-#   Stage 5 (H2):      regime(2) x method(5) x seed(5) x T(750)
-STAGE4_MAIN_STEPS = 5 * 2 * 5 * 5 * 400
-STAGE4_FRONTIER_STEPS = 1 * 4 * 5 * 5 * 400
-STAGE5_STEPS = 2 * 5 * 5 * 750
-TOTAL_GRID_STEPS = STAGE4_MAIN_STEPS + STAGE4_FRONTIER_STEPS + STAGE5_STEPS  # 177,500
+# Grid sizes updated for Qwen2.5-3B feasibility (reduced seeds and episode lengths):
+#   Stage 4 main:     alpha(5) x K(2)              x method(5) x seed(1) x T(150)
+#   Stage 4 frontier:            K-frontier(4)      x method(5) x seed(1) x T(150)  [1 fixed high alpha]
+#   Stage 5 (H2):      regime(2) x method(5) x seed(1) x T(250)
+STAGE4_MAIN_STEPS = 5 * 2 * 5 * 1 * 150
+STAGE4_FRONTIER_STEPS = 1 * 4 * 5 * 1 * 150
+STAGE5_STEPS = 2 * 5 * 1 * 250
+TOTAL_GRID_STEPS = STAGE4_MAIN_STEPS + STAGE4_FRONTIER_STEPS + STAGE5_STEPS  # 13,000
 
-GRID_TIME_BUDGET_SECONDS = 4 * 3600  # upper end of PLAN.md's "3-4 hours"
+GRID_TIME_BUDGET_SECONDS = 20 * 3600  # 20 hours budget
 
 
 def run_near_ceiling_check(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATION_TICKETS) -> float:

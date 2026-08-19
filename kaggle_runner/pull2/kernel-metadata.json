@@ -1,0 +1,19 @@
+{
+  "id": "nmuravya/lifelong-agent-stage-2-p100",
+  "id_no": 131279594,
+  "title": "Lifelong Agent Stage 2 (P100)",
+  "code_file": "lifelong-agent-stage-2-p100.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "keywords": [
+    "gpu"
+  ],
+  "dataset_sources": [],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": []
+}
