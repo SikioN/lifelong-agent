@@ -1,0 +1,21 @@
+=== Stage 2 final gate run (Colab T4, commit 51491ac, backbone Qwen2.5-1.5B-Instruct) ===
+
+near-ceiling accuracy (rule given, alpha=0): 1.000
+calibrated chance accuracy (no rule, no memory): 0.150  (target ~0.125)
+measured seconds/step (batched, batch=4):    1.2638
+projected total grid steps:                   177,500
+projected total grid time:                    62.31 hours
+
+AssertionError: GATE FAILED: projected grid time 62.31h exceeds budget 9.0h -- split the grid across multiple Kaggle kernel runs rather than raising this budget
+
+Interpretation: near-ceiling and calibrated-chance both PASS their thresholds
+(NEAR_CEILING_THRESHOLD=0.85, CHANCE_TOLERANCE=0.10 around 1/8=0.125) --
+the chosen backbone is validated on correctness/bias grounds. Only the
+grid-time budget assertion fails, for the exact reason PLAN.md's own
+troubleshooting section anticipated: GRID_THROUGHPUT_BATCH_SIZE had to be
+lowered to 4 (from an original 16) to fit available VRAM on this Colab T4
+instance after two real, confirmed OOM failures at 16 and 8 -- a small
+batch size amortizes per-call overhead poorly, inflating seconds/step.
+Per the plan's documented fallback, this means the real Stage 4/5 grid
+(177,500 steps) must be split across multiple kernel runs rather than
+attempted as a single session -- not a Stage 2 blocker.
