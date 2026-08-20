@@ -31,27 +31,24 @@ ENTRYPOINT = "{entrypoint}"
 
 
 def main() -> None:
-    # Clear any stale HuggingFace Hub cache/lock files left over from a
-    # previous kernel version on this instance before doing anything else
-    # -- rules out a corrupted cache or a stuck lock file as a contributor
-    # to the weight-loading hang seen on earlier runs. Kaggle instances are
-    # ephemeral, so this just means a fresh download, nothing is lost.
-    shutil.rmtree(Path.home() / ".cache" / "huggingface", ignore_errors=True)
-
-    # Clone outside the Kaggle working directory -- Kaggle captures
-    # whatever's in the working dir as kernel output, and a repo clone
-    # (with its full .git history) has no business being swept up as
-    # "results". Only the specific output dirs copied below should be.
-    repo_dir = Path("/tmp/repo")
+    # Kaggle runs a "T4 x2" kernel as TWO CONCURRENT processes (confirmed:
+    # duplicated log lines, ~0.2s apart, in lockstep), not one process with
+    # two visible GPUs. A single shared "/tmp/repo" clone target let those
+    # two processes race on the same working tree -- almost certainly the
+    # real cause of the garbage near-ceiling/chance numbers seen earlier,
+    # not a bad model or a bad cache. Giving each process's own PID its own
+    # clone directory makes the two processes fully independent.
+    repo_dir = Path(f"/tmp/repo_{{os.getpid()}}")
     subprocess.run(["git", "clone", REPO_URL, str(repo_dir)], check=True)
     subprocess.run(["git", "-C", str(repo_dir), "checkout", REPO_COMMIT], check=True)
     # Install everything EXCEPT torch -- Kaggle's image ships a torch
     # build already validated against whatever GPU it hands out.
     # Reinstalling from our requirements.txt's loose "torch>=2.2" floor
-    # pulled in a newer build with no compiled kernels for this P100
-    # (confirmed: "CUDA error: no kernel image is available for execution
-    # on the device"). Keeping Kaggle's preinstalled torch sidesteps this
-    # GPU-compute-capability-vs-wheel-build problem entirely.
+    # pulled in a newer build with no compiled kernels for the GPU Kaggle
+    # assigned in an earlier attempt (confirmed: "CUDA error: no kernel
+    # image is available for execution on the device"). Keeping Kaggle's
+    # preinstalled torch sidesteps this GPU-compute-capability-vs-wheel
+    # problem entirely.
     all_reqs = (repo_dir / "requirements.txt").read_text().splitlines()
     reqs_without_torch = [line for line in all_reqs if not line.strip().lower().startswith("torch")]
     filtered_reqs_path = repo_dir / "requirements_kaggle.txt"
@@ -60,20 +57,18 @@ def main() -> None:
         [sys.executable, "-m", "pip", "install", "-q", "-r", str(filtered_reqs_path)],
         check=True,
     )
-    # This project's code only ever targets one GPU (agent/policy.py's
-    # _select_device() picks plain "cuda" = device 0). On a T4x2 Kaggle
-    # instance, weight loading hung indefinitely and produced garbage
-    # accuracy results (confirmed: Kaggle runs two concurrent processes
-    # for a "T4 x2" kernel, not one process with two visible GPUs) --
-    # single-GPU accelerators (P100) are used instead of working around
-    # that, per the human partner's decision.
-    # PYTHONFAULTHANDLER: the previous run crashed mid weight-loading with
-    # no Python traceback captured anywhere in the kernel log -- consistent
-    # with a native-level crash (e.g. segfault) that kills the process
-    # before normal exception handling runs. faulthandler prints a
-    # low-level traceback on fatal signals even then. PYTHONUNBUFFERED
-    # rules out output being lost to buffering if the process dies abruptly.
-    env = dict(os.environ, CUDA_VISIBLE_DEVICES="0", PYTHONFAULTHANDLER="1", PYTHONUNBUFFERED="1")
+    # No CUDA_VISIBLE_DEVICES override here: if Kaggle's own dual-process
+    # launcher already assigns each of the two T4x2 processes its own GPU,
+    # forcing both onto "0" would make them collide on one GPU (or break
+    # whichever process didn't natively have a device 0). Let Kaggle's
+    # own assignment stand.
+    # PYTHONFAULTHANDLER: an earlier run crashed with no Python traceback
+    # captured anywhere in the kernel log -- consistent with a native-level
+    # crash (e.g. segfault) killing the process before normal exception
+    # handling runs. faulthandler prints a low-level traceback on fatal
+    # signals even then. PYTHONUNBUFFERED rules out output being lost to
+    # buffering if the process dies abruptly.
+    env = dict(os.environ, PYTHONFAULTHANDLER="1", PYTHONUNBUFFERED="1")
     subprocess.run([sys.executable, "-m", ENTRYPOINT], check=True, cwd=str(repo_dir), env=env)
 
     # Kaggle captures whatever's in the working directory as kernel output --
