@@ -1,5 +1,0 @@
-near-ceiling accuracy (rule given, alpha=0): 0.150
-chance accuracy (no rule, no memory):        0.150  (target ~0.125)
-measured seconds/step (batched, batch=16):    13.2595
-projected total grid steps:                   177,500
-projected total grid time:                    653.77 hours

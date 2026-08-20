@@ -6,13 +6,11 @@ a MacBook without CUDA (batched forward passes, verified in Task 3).
 """
 from __future__ import annotations
 
-import os
-
 import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-DEFAULT_MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct")
+DEFAULT_MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
 
 
 def _select_device() -> str:
@@ -31,22 +29,8 @@ class ClosedSetPolicy:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-            
-        # Use bf16/fp16 and auto device mapping for CUDA to support large models on Kaggle.
-        if self.device == "cuda":
-            dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-            device_map = "cuda:0"
-        else:
-            dtype = torch.float32
-            device_map = None
-            
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_name, 
-            torch_dtype=dtype,
-            device_map=device_map
-        )
-        if device_map is None:
-            self.model.to(self.device)
+        self.model = AutoModelForCausalLM.from_pretrained(model_name, dtype=torch.float32)
+        self.model.to(self.device)
         self.model.eval()
 
     def _candidate_token_ids(self, prompt: str, candidate: str) -> list[int]:
@@ -88,7 +72,7 @@ class ClosedSetPolicy:
         return candidates[int(np.argmax(scores))]
 
     @torch.no_grad()
-    def score_candidates_batch(self, prompts: list[str], candidates: list[str], chunk_size: int = 16) -> np.ndarray:
+    def score_candidates_batch(self, prompts: list[str], candidates: list[str]) -> np.ndarray:
         """Same scoring as score_candidates, but for many prompts against the
         SAME fixed candidate set, in one padded batched forward pass. This is
         the throughput-critical path for the Stage 4/5 grid: right-padding +
@@ -113,27 +97,21 @@ class ClosedSetPolicy:
         for row, seq in enumerate(sequences):
             batch[row, : len(seq)] = torch.tensor(seq)
             attention_mask[row, : len(seq)] = 1
+        batch = batch.to(self.device)
+        attention_mask = attention_mask.to(self.device)
+
+        logits = self.model(input_ids=batch, attention_mask=attention_mask).logits
+        log_probs = torch.log_softmax(logits.float(), dim=-1)
+
         flat_scores = np.zeros(len(sequences), dtype=np.float64)
-        
-        for i in range(0, len(sequences), chunk_size):
-            b = batch[i : i + chunk_size].to(self.device)
-            m = attention_mask[i : i + chunk_size].to(self.device)
-            
-            logits = self.model(input_ids=b, attention_mask=m).logits
-            log_probs = torch.log_softmax(logits.float(), dim=-1)
-            
-            for chunk_row in range(b.size(0)):
-                row = i + chunk_row
-                n_prompt = prompt_lens[row]
-                n_cand = cand_lens[row]
-                total = 0.0
-                for offset in range(n_cand):
-                    position = n_prompt + offset - 1
-                    token_id = batch[row, n_prompt + offset].item()
-                    total += log_probs[chunk_row, position, token_id].item()
-                flat_scores[row] = total
-                
-            if self.device == "mps":
-                torch.mps.empty_cache()
+        for row in range(len(sequences)):
+            n_prompt = prompt_lens[row]
+            n_cand = cand_lens[row]
+            total = 0.0
+            for offset in range(n_cand):
+                position = n_prompt + offset - 1
+                token_id = batch[row, n_prompt + offset].item()
+                total += log_probs[row, position, token_id].item()
+            flat_scores[row] = total
 
         return flat_scores.reshape(len(prompts), len(candidates))

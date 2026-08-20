@@ -7,27 +7,27 @@ per-step throughput, per docs/materials/PLAN.md's Stage 2 gate.
 Run directly: `uv run python -m experiments.calibrate_speed`
 """
 import time
-import os
 
-from tqdm import tqdm
 from agent.policy import ClosedSetPolicy
 from agent.prompt_templates import build_prompt, render_rule_context
 from env.generator import ACTION_LABELS, TicketGenerator
 
 N_CALIBRATION_TICKETS = 60
 NEAR_CEILING_THRESHOLD = 0.85
-CHANCE_TOLERANCE = 0.15  # accuracy must land within +/- this of 1/|A|
+CHANCE_TOLERANCE = 0.10  # accuracy must land within +/- this of 1/|A|
 
-# Grid sizes updated for Qwen2.5-3B feasibility (reduced seeds and episode lengths):
-#   Stage 4 main:     alpha(5) x K(2)              x method(5) x seed(1) x T(150)
-#   Stage 4 frontier:            K-frontier(4)      x method(5) x seed(1) x T(150)  [1 fixed high alpha]
-#   Stage 5 (H2):      regime(2) x method(5) x seed(1) x T(250)
-STAGE4_MAIN_STEPS = 5 * 2 * 5 * 1 * 150
-STAGE4_FRONTIER_STEPS = 1 * 4 * 5 * 1 * 150
-STAGE5_STEPS = 2 * 5 * 1 * 250
-TOTAL_GRID_STEPS = STAGE4_MAIN_STEPS + STAGE4_FRONTIER_STEPS + STAGE5_STEPS  # 13,000
+# Grid sizes computed directly from docs/materials/PLAN.md's "Этапы выполнения"
+# Stage 4/5 rows (not the rougher "~50k+~14k" aside elsewhere in that doc --
+# this calibration is exactly what should be trusted if the two disagree):
+#   Stage 4 main:     alpha(5) x K(2)              x method(5) x seed(5) x T(400)
+#   Stage 4 frontier:            K-frontier(4)      x method(5) x seed(5) x T(400)  [1 fixed high alpha]
+#   Stage 5 (H2):      regime(2) x method(5) x seed(5) x T(750)
+STAGE4_MAIN_STEPS = 5 * 2 * 5 * 5 * 400
+STAGE4_FRONTIER_STEPS = 1 * 4 * 5 * 5 * 400
+STAGE5_STEPS = 2 * 5 * 5 * 750
+TOTAL_GRID_STEPS = STAGE4_MAIN_STEPS + STAGE4_FRONTIER_STEPS + STAGE5_STEPS  # 177,500
 
-GRID_TIME_BUDGET_SECONDS = 20 * 3600  # 20 hours budget
+GRID_TIME_BUDGET_SECONDS = 4 * 3600  # upper end of PLAN.md's "3-4 hours"
 
 
 def run_near_ceiling_check(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATION_TICKETS) -> float:
@@ -37,7 +37,7 @@ def run_near_ceiling_check(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATI
     generator = TicketGenerator(alpha=0.0, seed=777)
     rule_context = render_rule_context(generator.default_action_map)
     correct = 0
-    for step in tqdm(range(n_tickets), desc="Near-ceiling"):
+    for step in range(n_tickets):
         ticket = generator.sample(step)
         prompt = build_prompt(ticket.text, ACTION_LABELS, rule_context=rule_context)
         prediction = policy.predict(prompt, ACTION_LABELS)
@@ -53,7 +53,7 @@ def run_chance_check(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATION_TIC
     knowledge or the scoring has a systematic bias (e.g. length bias)."""
     generator = TicketGenerator(alpha=0.0, seed=778)
     correct = 0
-    for step in tqdm(range(n_tickets), desc="Chance"):
+    for step in range(n_tickets):
         ticket = generator.sample(step)
         prompt = build_prompt(ticket.text, ACTION_LABELS)
         prediction = policy.predict(prompt, ACTION_LABELS)
@@ -78,35 +78,27 @@ def measure_batch_seconds_per_step(policy: ClosedSetPolicy, batch_size: int = 16
 
 
 def main() -> None:
-    model_name = os.environ.get("MODEL_NAME", "Qwen/Qwen2.5-1.5B-Instruct")
-    print(f"Calibrating {model_name}...", flush=True)
+    policy = ClosedSetPolicy()
 
-    policy = ClosedSetPolicy(model_name)
-
-    print("Testing near-ceiling performance...", flush=True)
     near_ceiling_acc = run_near_ceiling_check(policy)
-    print(f"  near-ceiling accuracy (rule given, alpha=0): {near_ceiling_acc:.3f}", flush=True)
+    chance_acc = run_chance_check(policy)
+    seconds_per_step = measure_batch_seconds_per_step(policy)
+    projected_total_seconds = seconds_per_step * TOTAL_GRID_STEPS
+
+    chance_target = 1 / len(ACTION_LABELS)
+    print(f"near-ceiling accuracy (rule given, alpha=0): {near_ceiling_acc:.3f}")
+    print(f"chance accuracy (no rule, no memory):        {chance_acc:.3f}  (target ~{chance_target:.3f})")
+    print(f"measured seconds/step (batched, batch=16):    {seconds_per_step:.4f}")
+    print(f"projected total grid steps:                   {TOTAL_GRID_STEPS:,}")
+    print(f"projected total grid time:                    {projected_total_seconds / 3600:.2f} hours")
+
     assert near_ceiling_acc >= NEAR_CEILING_THRESHOLD, (
         f"GATE FAILED: near-ceiling accuracy {near_ceiling_acc:.3f} < {NEAR_CEILING_THRESHOLD}"
     )
-
-    print("Testing chance performance (no rules)...", flush=True)
-    chance_acc = run_chance_check(policy)
-    chance_target = 1 / len(ACTION_LABELS)
-    print(f"  chance accuracy: {chance_acc:.3f}  (target ~{chance_target:.3f})", flush=True)
     assert abs(chance_acc - chance_target) <= CHANCE_TOLERANCE, (
         f"GATE FAILED: chance accuracy {chance_acc:.3f} not within "
         f"{CHANCE_TOLERANCE} of {chance_target:.3f}"
     )
-
-    print("Measuring throughput...", flush=True)
-    seconds_per_step = measure_batch_seconds_per_step(policy)
-    projected_total_seconds = seconds_per_step * TOTAL_GRID_STEPS
-
-    print(f"  measured seconds/step (batched, batch=16):    {seconds_per_step:.4f}", flush=True)
-    print(f"  projected total grid steps:                   {TOTAL_GRID_STEPS:,}", flush=True)
-    print(f"  projected total grid time:                    {projected_total_seconds / 3600:.2f} hours", flush=True)
-
     assert projected_total_seconds <= GRID_TIME_BUDGET_SECONDS, (
         f"GATE FAILED: projected grid time {projected_total_seconds / 3600:.2f}h "
         f"exceeds budget {GRID_TIME_BUDGET_SECONDS / 3600:.1f}h -- consider a "

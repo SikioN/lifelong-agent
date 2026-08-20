@@ -39,4 +39,6 @@ also contains unrelated third-party (superpowers) test files.
 
 ## Status
 
-Stage 2 — policy wrapper + speed calibration gate passed.
+Stage 2 in progress — policy wrapper and calibration built and reviewed
+(commit `e1fc413`). Execution moved to Kaggle T4 (no local GPU); see
+[`docs/implementation-plans/2026-08-20-stage2-kaggle-redo-design.md`](docs/implementation-plans/2026-08-20-stage2-kaggle-redo-design.md).
