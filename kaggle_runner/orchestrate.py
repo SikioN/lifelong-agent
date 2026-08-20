@@ -45,8 +45,19 @@ def main() -> None:
     repo_dir = Path("/tmp/repo")
     subprocess.run(["git", "clone", REPO_URL, str(repo_dir)], check=True)
     subprocess.run(["git", "-C", str(repo_dir), "checkout", REPO_COMMIT], check=True)
+    # Install everything EXCEPT torch -- Kaggle's image ships a torch
+    # build already validated against whatever GPU it hands out.
+    # Reinstalling from our requirements.txt's loose "torch>=2.2" floor
+    # pulled in a newer build with no compiled kernels for this P100
+    # (confirmed: "CUDA error: no kernel image is available for execution
+    # on the device"). Keeping Kaggle's preinstalled torch sidesteps this
+    # GPU-compute-capability-vs-wheel-build problem entirely.
+    all_reqs = (repo_dir / "requirements.txt").read_text().splitlines()
+    reqs_without_torch = [line for line in all_reqs if not line.strip().lower().startswith("torch")]
+    filtered_reqs_path = repo_dir / "requirements_kaggle.txt"
+    filtered_reqs_path.write_text("\\n".join(reqs_without_torch))
     subprocess.run(
-        [sys.executable, "-m", "pip", "install", "-q", "-r", str(repo_dir / "requirements.txt")],
+        [sys.executable, "-m", "pip", "install", "-q", "-r", str(filtered_reqs_path)],
         check=True,
     )
     # This project's code only ever targets one GPU (agent/policy.py's
