@@ -1,8 +1,11 @@
 """Frozen-backbone policy: closed-set action-label scoring via causal-LM
 log-likelihood. No generation, no fine-tuning on the critical path (LoRA is
-optional/bonus — see docs/materials/PLAN.md). Scoring candidates instead of
-generating text is what makes the Stage 4/5 grid computationally feasible on
-a MacBook without CUDA (batched forward passes, verified in Task 3).
+optional/bonus — see docs/materials/PLAN.md). Scoring candidates (batched
+forward passes, verified in Task 3) is cheaper than generating text, but
+that alone was NOT enough to make the Stage 4/5 grid feasible on a local
+MacBook without CUDA — real throughput calibration showed local compute was
+insufficient, which is why the grid runs on a cloud GPU instead (Kaggle,
+then Google Colab; see docs/materials/PLAN.md's Архитектурная правка 3).
 """
 from __future__ import annotations
 

@@ -39,13 +39,19 @@ also contains unrelated third-party (superpowers) test files.
 
 ## Status
 
-Stage 2 complete -- policy wrapper, label-prior calibration, and a real
-GPU-based gate confirmation all reviewed and passing (backbone:
-`Qwen2.5-1.5B-Instruct`, near-ceiling=1.000, calibrated chance=0.150).
+Stage 2 complete -- policy wrapper and label-prior calibration reviewed;
+the real GPU-based gate run (backbone `Qwen2.5-1.5B-Instruct`, Colab T4,
+batch=4) passed its accuracy and bias-calibration criteria
+(near-ceiling=1.000 vs threshold ≥0.85, calibrated chance=0.150 vs target
+0.125±0.10) but failed its time-budget criterion (projected grid time
+62.31h vs a 9h single-GPU-session budget) -- as anticipated, since the
+full grid (177,500 steps) was never expected to fit in one session.
 Execution moved from a local MacBook (insufficient) through Kaggle to
 Google Colab (single T4) after real, evidence-driven infrastructure
 findings -- see [`docs/materials/PLAN.md`](docs/materials/PLAN.md)'s
 Архитектурная правка 3 and
 [`docs/implementation-plans/2026-08-20-stage2-kaggle-redo-design.md`](docs/implementation-plans/2026-08-20-stage2-kaggle-redo-design.md)
-for the full story. The real Stage 4/5 grid (177,500 steps) will need to
-be split across multiple GPU sessions rather than run in one.
+for the full story. The real Stage 4/5 grid will need to be split across
+multiple GPU sessions (e.g. by α value) rather than run in one, per the
+gate's own outcome (see `kaggle_runner/runs/final-gate/gate_output.txt`
+for the raw run output).

@@ -54,11 +54,16 @@ STAGE5_STEPS = 2 * 5 * 5 * 750
 TOTAL_GRID_STEPS = STAGE4_MAIN_STEPS + STAGE4_FRONTIER_STEPS + STAGE5_STEPS  # 177,500
 
 # Free-tier Kaggle GPU sessions cap at ~9h wall-clock; this replaces the
-# original CPU/MPS-era 4h estimate now that Stage 2+ runs on Kaggle T4 (see
-# docs/implementation-plans/2026-08-20-stage2-kaggle-redo-design.md). If a
-# projected run exceeds this, split the grid across multiple kernel runs --
-# do not raise this constant to make a run fit.
-GRID_TIME_BUDGET_SECONDS = 9 * 3600  # one Kaggle free-tier GPU session
+# original CPU/MPS-era 4h estimate now that Stage 2+ needs a cloud GPU (see
+# docs/implementation-plans/2026-08-20-stage2-kaggle-redo-design.md). The
+# platform actually used for the real gate run ended up being Google Colab,
+# not Kaggle (see docs/materials/PLAN.md's Архитектурная правка 3) -- this
+# 9h figure is still grounded in Kaggle's published free-tier limit, and
+# Colab's own free-tier session limit may differ; it hasn't been re-derived
+# for Colab specifically. If a projected run exceeds this, split the grid
+# across multiple GPU sessions -- do not raise this constant to make a run
+# fit.
+GRID_TIME_BUDGET_SECONDS = 9 * 3600  # one Kaggle-free-tier-derived GPU session budget
 
 
 def run_near_ceiling_check(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATION_TICKETS) -> float:
