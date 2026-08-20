@@ -25,12 +25,17 @@ DEFAULT_THROUGHPUT_BATCH_SIZE = 4  # 16 OOMs on realistic dev hardware (confirme
 # test, and left as the function's bare default so any future caller that
 # doesn't specify a batch_size -- including local tests -- stays safe).
 
-GRID_THROUGHPUT_BATCH_SIZE = 16  # Used explicitly by the gate-deciding
-# measurement in main() (and by diagnose_label_bias.py's sweep) -- these
-# only ever run on a cloud GPU (Colab/Kaggle T4, 16GB VRAM) with far more
-# headroom than the 8GB Mac DEFAULT_THROUGHPUT_BATCH_SIZE was tuned for.
-# Kept as a separate constant so raising it can't silently reintroduce the
-# local OOM landmine for callers that rely on the plain default.
+GRID_THROUGHPUT_BATCH_SIZE = 8  # Was 16, confirmed to OOM on Colab T4 running
+# the gate for Qwen2.5-1.5B-Instruct: 16 * 8 candidates * ~175 tokens *
+# 151,936 vocab * 4 bytes (float32) for the full-vocab log_softmax alone is
+# ~12.7 GiB, plus ~6 GiB for the 1.5B model's own weights in float32 --
+# doesn't fit a ~15GB T4. Halved to 8 (~6.3 GiB + ~6 GiB weights =~ 12.3 GiB,
+# real margin left). Used explicitly by the gate-deciding measurement in
+# main() (and by diagnose_label_bias.py's sweep) -- these only ever run on a
+# cloud GPU with more headroom than the 8GB Mac DEFAULT_THROUGHPUT_BATCH_SIZE
+# was tuned for, but not unlimited headroom, as this OOM demonstrated. Kept
+# as a separate constant so tuning it can't silently reintroduce the local
+# OOM landmine for callers that rely on the plain default.
 
 # Grid sizes computed directly from docs/materials/PLAN.md's "Этапы выполнения"
 # Stage 4/5 rows (not the rougher "~50k+~14k" aside elsewhere in that doc --
