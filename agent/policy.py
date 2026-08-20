@@ -10,7 +10,9 @@ import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-DEFAULT_MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
+# Chosen from the Stage 2 backbone sweep (near-ceiling, calibrated chance,
+# throughput) -- see kaggle_runner/runs/backbone-sweep/diagnostic_output/backbone_sweep.json
+DEFAULT_MODEL_NAME = "Qwen/Qwen2.5-1.5B-Instruct"
 
 
 def _select_device() -> str:
