@@ -9,6 +9,7 @@ Run directly: `uv run python -m experiments.calibrate_speed`
 import time
 
 import numpy as np
+import torch
 from tqdm import tqdm
 
 from agent.policy import ClosedSetPolicy, calibrate_scores
@@ -25,17 +26,21 @@ DEFAULT_THROUGHPUT_BATCH_SIZE = 4  # 16 OOMs on realistic dev hardware (confirme
 # test, and left as the function's bare default so any future caller that
 # doesn't specify a batch_size -- including local tests -- stays safe).
 
-GRID_THROUGHPUT_BATCH_SIZE = 8  # Was 16, confirmed to OOM on Colab T4 running
-# the gate for Qwen2.5-1.5B-Instruct: 16 * 8 candidates * ~175 tokens *
-# 151,936 vocab * 4 bytes (float32) for the full-vocab log_softmax alone is
-# ~12.7 GiB, plus ~6 GiB for the 1.5B model's own weights in float32 --
-# doesn't fit a ~15GB T4. Halved to 8 (~6.3 GiB + ~6 GiB weights =~ 12.3 GiB,
-# real margin left). Used explicitly by the gate-deciding measurement in
-# main() (and by diagnose_label_bias.py's sweep) -- these only ever run on a
-# cloud GPU with more headroom than the 8GB Mac DEFAULT_THROUGHPUT_BATCH_SIZE
-# was tuned for, but not unlimited headroom, as this OOM demonstrated. Kept
-# as a separate constant so tuning it can't silently reintroduce the local
-# OOM landmine for callers that rely on the plain default.
+GRID_THROUGHPUT_BATCH_SIZE = 4  # Was 16, then 8, both confirmed to OOM on
+# Colab T4 running the gate for Qwen2.5-1.5B-Instruct. The batch=8 failure's
+# own error message gave exact numbers: needed to allocate 5.44 GiB, only
+# 3.13 GiB free (14.56 GiB total, 11.43 GiB already in use -- more than the
+# ~6 GiB expected for 1.5B's own float32 weights, consistent with the CUDA
+# caching allocator holding onto memory from the many preceding unbatched
+# forward passes in the near-ceiling/chance/calibrated-chance checks).
+# measure_batch_seconds_per_step() now also clears that cache right before
+# this call. Matches DEFAULT_THROUGHPUT_BATCH_SIZE (4) exactly -- turns out
+# even a "cloud GPU with real headroom" doesn't have much to spare once
+# 1440+ prior forward passes have left the allocator holding cached memory.
+# Used explicitly by the gate-deciding measurement in main() (and by
+# diagnose_label_bias.py's sweep). Kept as a separate constant from
+# DEFAULT_THROUGHPUT_BATCH_SIZE, even though they're equal right now, so a
+# future change to one doesn't silently change the other's meaning.
 
 # Grid sizes computed directly from docs/materials/PLAN.md's "Этапы выполнения"
 # Stage 4/5 rows (not the rougher "~50k+~14k" aside elsewhere in that doc --
@@ -119,7 +124,15 @@ def measure_batch_seconds_per_step(policy: ClosedSetPolicy, batch_size: int = DE
     """Wall-clock seconds per ticket-decision for one batched closed-set
     scoring call (batch_size tickets x len(ACTION_LABELS) candidates each),
     used to project total grid time. A "step" in the real grid is exactly
-    one ticket's worth of scoring over the full action space."""
+    one ticket's worth of scoring over the full action space.
+
+    Clears the CUDA caching allocator's cache first -- confirmed on a real
+    GPU run that the many preceding unbatched near-ceiling/chance/
+    calibrated-chance forward passes leave it holding onto more memory than
+    this batched call alone would need, and this call is the single largest
+    allocation in the whole gate (the full-vocab log_softmax tensor)."""
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     generator = TicketGenerator(alpha=0.0, seed=779)
     rule_context = render_rule_context(generator.default_action_map)
     tickets = [generator.sample(step) for step in range(batch_size)]
