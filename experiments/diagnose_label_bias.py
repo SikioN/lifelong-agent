@@ -27,6 +27,8 @@ from tqdm import tqdm
 from agent.policy import ClosedSetPolicy
 from env.generator import ACTION_LABELS
 from experiments.calibrate_speed import (
+    DEFAULT_THROUGHPUT_BATCH_SIZE,
+    GRID_THROUGHPUT_BATCH_SIZE,
     N_CALIBRATION_TICKETS,
     measure_batch_seconds_per_step,
     neutral_prompt,
@@ -43,15 +45,24 @@ DEFAULT_CANDIDATE_MODELS = [
 OUTPUT_DIR = Path(__file__).parent / "diagnostic_output"
 
 
-def diagnose_bias(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATION_TICKETS) -> dict:
+def diagnose_bias(
+    policy: ClosedSetPolicy,
+    n_tickets: int = N_CALIBRATION_TICKETS,
+    throughput_batch_size: int = DEFAULT_THROUGHPUT_BATCH_SIZE,
+) -> dict:
     """Runs near-ceiling, raw chance, and calibrated chance for one loaded
     policy, plus the label prior and measured throughput -- everything
-    needed to judge whether this backbone is both capable and unbiased."""
+    needed to judge whether this backbone is both capable and unbiased.
+
+    throughput_batch_size defaults to the safe-everywhere value (4) so
+    callers that don't override it -- including local tests -- can't
+    accidentally OOM. main() below overrides it to GRID_THROUGHPUT_BATCH_SIZE
+    since it only ever runs on a cloud GPU with real headroom."""
     prior = policy.measure_label_prior(neutral_prompt(), ACTION_LABELS)
     near_ceiling = run_near_ceiling_check(policy, n_tickets=n_tickets)
     raw_chance = run_chance_check(policy, n_tickets=n_tickets)
     calibrated_chance = run_chance_check_calibrated(policy, prior, n_tickets=n_tickets)
-    seconds_per_step = measure_batch_seconds_per_step(policy)
+    seconds_per_step = measure_batch_seconds_per_step(policy, batch_size=throughput_batch_size)
     return {
         "near_ceiling_accuracy": near_ceiling,
         "raw_chance_accuracy": raw_chance,
@@ -72,7 +83,7 @@ def main() -> None:
     for model_name in tqdm(candidate_models, desc="backbone sweep"):
         print(f"=== {model_name} ===", flush=True)
         policy = ClosedSetPolicy(model_name)
-        result = diagnose_bias(policy)
+        result = diagnose_bias(policy, throughput_batch_size=GRID_THROUGHPUT_BATCH_SIZE)
         result["model_name"] = model_name
         print(f"  near-ceiling accuracy:      {result['near_ceiling_accuracy']:.3f}", flush=True)
         print(f"  raw chance accuracy:        {result['raw_chance_accuracy']:.3f}", flush=True)

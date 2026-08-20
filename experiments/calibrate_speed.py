@@ -22,8 +22,15 @@ CHANCE_TOLERANCE = 0.10  # accuracy must land within +/- this of 1/|A|
 DEFAULT_THROUGHPUT_BATCH_SIZE = 4  # 16 OOMs on realistic dev hardware (confirmed:
 # ~10.87 GiB for the full-vocab log_softmax at batch_size=16, 8 candidates,
 # ~150-token sequences) -- 4 is proven safe (already used by this file's own
-# test). The real Kaggle T4 throughput number Task 6 measures for the actual
-# gate decision has far more headroom and isn't affected by this local default.
+# test, and left as the function's bare default so any future caller that
+# doesn't specify a batch_size -- including local tests -- stays safe).
+
+GRID_THROUGHPUT_BATCH_SIZE = 16  # Used explicitly by the gate-deciding
+# measurement in main() (and by diagnose_label_bias.py's sweep) -- these
+# only ever run on a cloud GPU (Colab/Kaggle T4, 16GB VRAM) with far more
+# headroom than the 8GB Mac DEFAULT_THROUGHPUT_BATCH_SIZE was tuned for.
+# Kept as a separate constant so raising it can't silently reintroduce the
+# local OOM landmine for callers that rely on the plain default.
 
 # Grid sizes computed directly from docs/materials/PLAN.md's "Этапы выполнения"
 # Stage 4/5 rows (not the rougher "~50k+~14k" aside elsewhere in that doc --
@@ -125,13 +132,13 @@ def main() -> None:
 
     near_ceiling_acc = run_near_ceiling_check(policy)
     chance_acc = run_chance_check_calibrated(policy, prior)
-    seconds_per_step = measure_batch_seconds_per_step(policy)
+    seconds_per_step = measure_batch_seconds_per_step(policy, batch_size=GRID_THROUGHPUT_BATCH_SIZE)
     projected_total_seconds = seconds_per_step * TOTAL_GRID_STEPS
 
     chance_target = 1 / len(ACTION_LABELS)
     print(f"near-ceiling accuracy (rule given, alpha=0): {near_ceiling_acc:.3f}", flush=True)
     print(f"calibrated chance accuracy (no rule, no memory): {chance_acc:.3f}  (target ~{chance_target:.3f})", flush=True)
-    print(f"measured seconds/step (batched, batch={DEFAULT_THROUGHPUT_BATCH_SIZE}):    {seconds_per_step:.4f}", flush=True)
+    print(f"measured seconds/step (batched, batch={GRID_THROUGHPUT_BATCH_SIZE}):    {seconds_per_step:.4f}", flush=True)
     print(f"projected total grid steps:                   {TOTAL_GRID_STEPS:,}", flush=True)
     print(f"projected total grid time:                    {projected_total_seconds / 3600:.2f} hours", flush=True)
 
