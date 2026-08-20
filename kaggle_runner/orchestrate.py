@@ -67,7 +67,13 @@ def main() -> None:
     # for a "T4 x2" kernel, not one process with two visible GPUs) --
     # single-GPU accelerators (P100) are used instead of working around
     # that, per the human partner's decision.
-    env = dict(os.environ, CUDA_VISIBLE_DEVICES="0")
+    # PYTHONFAULTHANDLER: the previous run crashed mid weight-loading with
+    # no Python traceback captured anywhere in the kernel log -- consistent
+    # with a native-level crash (e.g. segfault) that kills the process
+    # before normal exception handling runs. faulthandler prints a
+    # low-level traceback on fatal signals even then. PYTHONUNBUFFERED
+    # rules out output being lost to buffering if the process dies abruptly.
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES="0", PYTHONFAULTHANDLER="1", PYTHONUNBUFFERED="1")
     subprocess.run([sys.executable, "-m", ENTRYPOINT], check=True, cwd=str(repo_dir), env=env)
 
     # Kaggle captures whatever's in the working directory as kernel output --
