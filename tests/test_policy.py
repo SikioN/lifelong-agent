@@ -12,7 +12,7 @@ from agent.policy import ClosedSetPolicy, calibrate_scores
 
 @pytest.fixture(scope="module")
 def policy() -> ClosedSetPolicy:
-    return ClosedSetPolicy()
+    return ClosedSetPolicy("Qwen/Qwen2.5-0.5B-Instruct")
 
 
 def test_score_candidates_returns_one_finite_score_per_candidate(policy):

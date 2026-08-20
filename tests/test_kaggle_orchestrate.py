@@ -10,6 +10,7 @@ from kaggle_runner.orchestrate import (
     get_status,
     pull_output,
     push,
+    render_kernel_notebook,
     render_kernel_script,
     wait_for_completion,
 )
@@ -22,13 +23,35 @@ def test_render_kernel_script_bakes_in_commit_and_entrypoint():
 
 
 def test_push_renders_script_writes_it_and_calls_kaggle_kernels_push(tmp_path):
-    metadata = {"id": "someuser/some-kernel"}
+    metadata = {"id": "someuser/some-kernel", "code_file": "kernel_template.py"}
     (tmp_path / "kernel-metadata.json").write_text(json.dumps(metadata))
     with patch("kaggle_runner.orchestrate.subprocess.run") as mock_run:
         kernel_id = push(tmp_path, repo_commit="abc123", entrypoint="experiments.diagnose_label_bias")
     written_script = (tmp_path / "kernel_template.py").read_text()
     assert "abc123" in written_script
     assert "experiments.diagnose_label_bias" in written_script
+    mock_run.assert_called_once_with(
+        ["kaggle", "kernels", "push", "-p", str(tmp_path)], check=True
+    )
+    assert kernel_id == "someuser/some-kernel"
+
+
+def test_push_renders_notebook_writes_it_and_calls_kaggle_kernels_push(tmp_path):
+    metadata = {"id": "someuser/some-kernel", "code_file": "kernel_template.ipynb"}
+    (tmp_path / "kernel-metadata.json").write_text(json.dumps(metadata))
+    with patch("kaggle_runner.orchestrate.subprocess.run") as mock_run:
+        kernel_id = push(tmp_path, repo_commit="abc123", entrypoint="experiments.diagnose_label_bias")
+    written_notebook_text = (tmp_path / "kernel_template.ipynb").read_text()
+    written_notebook = json.loads(written_notebook_text)
+    expected_notebook = json.loads(
+        render_kernel_notebook("abc123", "experiments.diagnose_label_bias")
+    )
+    assert written_notebook == expected_notebook
+    assert written_notebook["nbformat"] == 4
+    assert written_notebook["cells"][0]["cell_type"] == "code"
+    source = "".join(written_notebook["cells"][0]["source"])
+    assert "abc123" in source
+    assert "experiments.diagnose_label_bias" in source
     mock_run.assert_called_once_with(
         ["kaggle", "kernels", "push", "-p", str(tmp_path)], check=True
     )

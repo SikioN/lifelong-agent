@@ -18,7 +18,7 @@ from experiments.calibrate_speed import (
 
 @pytest.fixture(scope="module")
 def policy() -> ClosedSetPolicy:
-    return ClosedSetPolicy()
+    return ClosedSetPolicy("Qwen/Qwen2.5-0.5B-Instruct")
 
 
 def test_run_near_ceiling_check_returns_accuracy_in_unit_interval(policy):

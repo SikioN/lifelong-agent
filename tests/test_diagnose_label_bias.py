@@ -11,7 +11,7 @@ from experiments.diagnose_label_bias import diagnose_bias
 
 @pytest.fixture(scope="module")
 def policy() -> ClosedSetPolicy:
-    return ClosedSetPolicy()
+    return ClosedSetPolicy("Qwen/Qwen2.5-0.5B-Instruct")
 
 
 def test_diagnose_bias_returns_all_expected_keys(policy):
