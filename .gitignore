@@ -33,6 +33,7 @@ triage/
 !/tests/test_prompt_templates.py
 !/tests/test_policy.py
 !/tests/test_calibrate_speed.py
+!/tests/test_diagnose_label_bias.py
 
 # superpowers' own docs/ subtree — docs/materials/ (T-Lab task materials)
 # is NOT ignored and stays part of this project's repo.
