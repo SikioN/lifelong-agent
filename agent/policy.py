@@ -71,6 +71,14 @@ class ClosedSetPolicy:
         scores = self.score_candidates(prompt, candidates)
         return candidates[int(np.argmax(scores))]
 
+    def measure_label_prior(self, prompt: str, candidates: list[str]) -> np.ndarray:
+        """Convenience alias for score_candidates, named for the calibration
+        use case: call this with a neutral prompt (no task-specific
+        information) to find the model's baseline preference among
+        candidates before any real signal is added. See calibrate_scores
+        below for what to do with the result."""
+        return self.score_candidates(prompt, candidates)
+
     @torch.no_grad()
     def score_candidates_batch(self, prompts: list[str], candidates: list[str]) -> np.ndarray:
         """Same scoring as score_candidates, but for many prompts against the
@@ -115,3 +123,14 @@ class ClosedSetPolicy:
             flat_scores[row] = total
 
         return flat_scores.reshape(len(prompts), len(candidates))
+
+
+def calibrate_scores(raw_scores: np.ndarray, prior: np.ndarray) -> np.ndarray:
+    """Subtract a previously-measured label prior from raw closed-set
+    scores, broadcasting over the last axis. Removes whatever preference
+    among candidates exists independent of the prompt's actual content --
+    see ClosedSetPolicy.measure_label_prior. Works for a single prompt's
+    score vector (n_candidates,) and a batch's score matrix
+    (n_prompts, n_candidates) alike, since numpy broadcasts a
+    (n_candidates,) prior across either shape's last axis."""
+    return raw_scores - prior
