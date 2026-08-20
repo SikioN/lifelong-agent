@@ -37,6 +37,7 @@ triage/
 !/tests/test_kaggle_orchestrate.py
 !/tests/test_random_mem.py
 !/tests/test_recency_mem.py
+!/tests/test_semantic_mem.py
 
 # superpowers' own docs/ subtree — docs/materials/ (T-Lab task materials)
 # is NOT ignored and stays part of this project's repo.
