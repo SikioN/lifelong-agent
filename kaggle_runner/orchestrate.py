@@ -38,27 +38,32 @@ def main() -> None:
     # ephemeral, so this just means a fresh download, nothing is lost.
     shutil.rmtree(Path.home() / ".cache" / "huggingface", ignore_errors=True)
 
-    subprocess.run(["git", "clone", REPO_URL, "repo"], check=True)
-    subprocess.run(["git", "-C", "repo", "checkout", REPO_COMMIT], check=True)
+    # Clone outside the Kaggle working directory -- Kaggle captures
+    # whatever's in the working dir as kernel output, and a repo clone
+    # (with its full .git history) has no business being swept up as
+    # "results". Only the specific output dirs copied below should be.
+    repo_dir = Path("/tmp/repo")
+    subprocess.run(["git", "clone", REPO_URL, str(repo_dir)], check=True)
+    subprocess.run(["git", "-C", str(repo_dir), "checkout", REPO_COMMIT], check=True)
     subprocess.run(
-        [sys.executable, "-m", "pip", "install", "-q", "-r", "repo/requirements.txt"],
+        [sys.executable, "-m", "pip", "install", "-q", "-r", str(repo_dir / "requirements.txt")],
         check=True,
     )
     # This project's code only ever targets one GPU (agent/policy.py's
     # _select_device() picks plain "cuda" = device 0). On a T4x2 Kaggle
-    # instance, weight loading hung indefinitely (confirmed twice,
-    # reproducibly, at the same "Materializing param=..." step) when both
-    # GPUs were visible to the process -- restricting visibility to a
-    # single GPU works around whatever PyTorch/transformers multi-GPU
-    # coordination issue causes that.
+    # instance, weight loading hung indefinitely and produced garbage
+    # accuracy results (confirmed: Kaggle runs two concurrent processes
+    # for a "T4 x2" kernel, not one process with two visible GPUs) --
+    # single-GPU accelerators (P100) are used instead of working around
+    # that, per the human partner's decision.
     env = dict(os.environ, CUDA_VISIBLE_DEVICES="0")
-    subprocess.run([sys.executable, "-m", ENTRYPOINT], check=True, cwd="repo", env=env)
+    subprocess.run([sys.executable, "-m", ENTRYPOINT], check=True, cwd=str(repo_dir), env=env)
 
     # Kaggle captures whatever's in the working directory as kernel output --
     # copy the entrypoint's results here explicitly rather than relying on
     # where it happened to write them relative to the cloned repo.
     for output_dir_name in ("calibration_output", "diagnostic_output"):
-        src = Path("repo/experiments") / output_dir_name
+        src = repo_dir / "experiments" / output_dir_name
         if src.exists():
             shutil.copytree(src, output_dir_name, dirs_exist_ok=True)
 

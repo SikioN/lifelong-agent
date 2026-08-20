@@ -5,7 +5,7 @@
   "language": "python",
   "kernel_type": "notebook",
   "is_private": "true",
-  "accelerator": "GPU_T4x2",
+  "accelerator": "GPU_P100",
   "enable_internet": "true",
   "dataset_sources": [],
   "competition_sources": [],
