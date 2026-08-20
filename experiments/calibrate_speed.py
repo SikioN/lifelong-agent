@@ -76,7 +76,7 @@ def run_near_ceiling_check(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATI
     for step in tqdm(range(n_tickets), desc="near-ceiling"):
         ticket = generator.sample(step)
         prompt = build_prompt(ticket.text, ACTION_LABELS, rule_context=rule_context)
-        prediction = policy.predict(prompt, ACTION_LABELS)
+        prediction = policy.predict(prompt, ACTION_LABELS, calibration_prior=None)
         correct += int(prediction == ticket.correct_action)
     return correct / n_tickets
 
@@ -92,7 +92,7 @@ def run_chance_check(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATION_TIC
     for step in tqdm(range(n_tickets), desc="raw chance"):
         ticket = generator.sample(step)
         prompt = build_prompt(ticket.text, ACTION_LABELS)
-        prediction = policy.predict(prompt, ACTION_LABELS)
+        prediction = policy.predict(prompt, ACTION_LABELS, calibration_prior=None)
         correct += int(prediction == ticket.correct_action)
     return correct / n_tickets
 

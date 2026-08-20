@@ -72,8 +72,16 @@ class ClosedSetPolicy:
             scores[idx] = total
         return scores
 
-    def predict(self, prompt: str, candidates: list[str]) -> str:
+    def predict(self, prompt: str, candidates: list[str], calibration_prior: np.ndarray | None) -> str:
+        """calibration_prior is required (not optional-with-a-default) so
+        every call site states explicitly whether it wants calibrated or
+        raw scoring -- see agent.policy.calibrate_scores and
+        ClosedSetPolicy.measure_label_prior for how to obtain a real prior.
+        Pass None for deliberately uncalibrated scoring (e.g. Stage 2's
+        raw-chance diagnostic, which needs to see the uncalibrated signal)."""
         scores = self.score_candidates(prompt, candidates)
+        if calibration_prior is not None:
+            scores = calibrate_scores(scores, calibration_prior)
         return candidates[int(np.argmax(scores))]
 
     def measure_label_prior(self, prompt: str, candidates: list[str]) -> np.ndarray:

@@ -32,12 +32,12 @@ def test_predict_follows_a_strong_explicit_echo_instruction(policy):
         "Repeat back exactly the following code and nothing else: ACTION_0\n"
         "Your response:"
     )
-    prediction = policy.predict(prompt, ["ACTION_0", "ACTION_5"])
+    prediction = policy.predict(prompt, ["ACTION_0", "ACTION_5"], calibration_prior=None)
     assert prediction == "ACTION_0"
 
 
 def test_predict_returns_one_of_the_candidates(policy):
-    prediction = policy.predict("The capital of France is", ["Paris", "Berlin", "Madrid"])
+    prediction = policy.predict("The capital of France is", ["Paris", "Berlin", "Madrid"], calibration_prior=None)
     assert prediction in ["Paris", "Berlin", "Madrid"]
 
 
@@ -99,3 +99,31 @@ def test_measure_label_prior_is_deterministic(policy):
     prior_a = policy.measure_label_prior("Pick one:", ["ACTION_0", "ACTION_1"])
     prior_b = policy.measure_label_prior("Pick one:", ["ACTION_0", "ACTION_1"])
     assert np.allclose(prior_a, prior_b)
+
+
+def test_predict_with_none_prior_matches_raw_argmax(policy):
+    prompt = "Hello,"
+    candidates = ["world", "there"]
+    raw_scores = policy.score_candidates(prompt, candidates)
+    import numpy as np
+    expected = candidates[int(np.argmax(raw_scores))]
+    assert policy.predict(prompt, candidates, calibration_prior=None) == expected
+
+
+def test_predict_with_a_prior_applies_calibration():
+    import numpy as np
+    from agent.policy import calibrate_scores
+
+    class _FakePolicy:
+        def score_candidates(self, prompt, candidates):
+            return np.array([1.0, 5.0, 2.0])
+        predict = ClosedSetPolicy.predict
+
+    fake = _FakePolicy()
+    prior = np.array([1.0, 5.0, 2.0])  # matches raw_scores exactly -> calibrated scores all equal
+    # argmax of an all-equal array is index 0 (numpy's tie-break rule) --
+    # this proves the prior was actually subtracted, not ignored, since
+    # the raw argmax (index 1, score 5.0) would differ from index 0.
+    candidates = ["ACTION_0", "ACTION_1", "ACTION_2"]
+    result = fake.predict("irrelevant prompt", candidates, calibration_prior=prior)
+    assert result == "ACTION_0"
