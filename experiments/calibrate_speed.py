@@ -8,7 +8,9 @@ Run directly: `uv run python -m experiments.calibrate_speed`
 """
 import time
 
-from agent.policy import ClosedSetPolicy
+import numpy as np
+
+from agent.policy import ClosedSetPolicy, calibrate_scores
 from agent.prompt_templates import build_prompt, render_rule_context
 from env.generator import ACTION_LABELS, TicketGenerator
 
@@ -27,7 +29,12 @@ STAGE4_FRONTIER_STEPS = 1 * 4 * 5 * 5 * 400
 STAGE5_STEPS = 2 * 5 * 5 * 750
 TOTAL_GRID_STEPS = STAGE4_MAIN_STEPS + STAGE4_FRONTIER_STEPS + STAGE5_STEPS  # 177,500
 
-GRID_TIME_BUDGET_SECONDS = 4 * 3600  # upper end of PLAN.md's "3-4 hours"
+# Free-tier Kaggle GPU sessions cap at ~9h wall-clock; this replaces the
+# original CPU/MPS-era 4h estimate now that Stage 2+ runs on Kaggle T4 (see
+# docs/implementation-plans/2026-08-20-stage2-kaggle-redo-design.md). If a
+# projected run exceeds this, split the grid across multiple kernel runs --
+# do not raise this constant to make a run fit.
+GRID_TIME_BUDGET_SECONDS = 9 * 3600  # one Kaggle free-tier GPU session
 
 
 def run_near_ceiling_check(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATION_TICKETS) -> float:
@@ -61,6 +68,34 @@ def run_chance_check(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATION_TIC
     return correct / n_tickets
 
 
+def neutral_prompt() -> str:
+    """The 'no information' prompt: same scaffold as a real ticket prompt,
+    but with no ticket text, no rule, no memory -- isolates whatever score
+    differences exist when nothing in the prompt justifies preferring one
+    label over another. See agent.policy.ClosedSetPolicy.measure_label_prior."""
+    return build_prompt("", ACTION_LABELS)
+
+
+def run_chance_check_calibrated(
+    policy: ClosedSetPolicy, prior: np.ndarray, n_tickets: int = N_CALIBRATION_TICKETS
+) -> float:
+    """Same condition as run_chance_check (no rule, no memory) but predicts
+    from calibrate_scores(raw_scores, prior) instead of raw argmax -- this
+    is the Stage 2 gate's real chance-condition check going forward, since
+    calibration is now part of the policy's intended behavior, not an
+    optional extra."""
+    generator = TicketGenerator(alpha=0.0, seed=778)
+    correct = 0
+    for step in range(n_tickets):
+        ticket = generator.sample(step)
+        prompt = build_prompt(ticket.text, ACTION_LABELS)
+        raw_scores = policy.score_candidates(prompt, ACTION_LABELS)
+        calibrated = calibrate_scores(raw_scores, prior)
+        prediction = ACTION_LABELS[int(np.argmax(calibrated))]
+        correct += int(prediction == ticket.correct_action)
+    return correct / n_tickets
+
+
 def measure_batch_seconds_per_step(policy: ClosedSetPolicy, batch_size: int = 16) -> float:
     """Wall-clock seconds per ticket-decision for one batched closed-set
     scoring call (batch_size tickets x len(ACTION_LABELS) candidates each),
@@ -79,15 +114,16 @@ def measure_batch_seconds_per_step(policy: ClosedSetPolicy, batch_size: int = 16
 
 def main() -> None:
     policy = ClosedSetPolicy()
+    prior = policy.measure_label_prior(neutral_prompt(), ACTION_LABELS)
 
     near_ceiling_acc = run_near_ceiling_check(policy)
-    chance_acc = run_chance_check(policy)
+    chance_acc = run_chance_check_calibrated(policy, prior)
     seconds_per_step = measure_batch_seconds_per_step(policy)
     projected_total_seconds = seconds_per_step * TOTAL_GRID_STEPS
 
     chance_target = 1 / len(ACTION_LABELS)
     print(f"near-ceiling accuracy (rule given, alpha=0): {near_ceiling_acc:.3f}")
-    print(f"chance accuracy (no rule, no memory):        {chance_acc:.3f}  (target ~{chance_target:.3f})")
+    print(f"calibrated chance accuracy (no rule, no memory): {chance_acc:.3f}  (target ~{chance_target:.3f})")
     print(f"measured seconds/step (batched, batch=16):    {seconds_per_step:.4f}")
     print(f"projected total grid steps:                   {TOTAL_GRID_STEPS:,}")
     print(f"projected total grid time:                    {projected_total_seconds / 3600:.2f} hours")
@@ -96,13 +132,13 @@ def main() -> None:
         f"GATE FAILED: near-ceiling accuracy {near_ceiling_acc:.3f} < {NEAR_CEILING_THRESHOLD}"
     )
     assert abs(chance_acc - chance_target) <= CHANCE_TOLERANCE, (
-        f"GATE FAILED: chance accuracy {chance_acc:.3f} not within "
+        f"GATE FAILED: calibrated chance accuracy {chance_acc:.3f} not within "
         f"{CHANCE_TOLERANCE} of {chance_target:.3f}"
     )
     assert projected_total_seconds <= GRID_TIME_BUDGET_SECONDS, (
         f"GATE FAILED: projected grid time {projected_total_seconds / 3600:.2f}h "
-        f"exceeds budget {GRID_TIME_BUDGET_SECONDS / 3600:.1f}h -- consider a "
-        f"smaller backbone (SmolLM2-135M/360M-Instruct, per PLAN.md fallback)"
+        f"exceeds budget {GRID_TIME_BUDGET_SECONDS / 3600:.1f}h -- split the grid "
+        f"across multiple Kaggle kernel runs rather than raising this budget"
     )
 
     print("\nGATE PASSED.")
