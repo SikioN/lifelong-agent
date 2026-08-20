@@ -5,6 +5,12 @@ from env.generator import TicketGenerator
 from memory.oracle_mem import OracleMemory
 
 
+def test_oracle_memory_has_empty_slots_attribute_after_construction():
+    generator = TicketGenerator(alpha=1.0, seed=5, n_tenants=5)
+    oracle = OracleMemory(budget=4, generator=generator)
+    assert oracle.slots == []
+
+
 def test_retrieve_reveals_the_correct_action_directly():
     generator = TicketGenerator(alpha=1.0, seed=5, n_tenants=5)
     oracle = OracleMemory(budget=4, generator=generator)

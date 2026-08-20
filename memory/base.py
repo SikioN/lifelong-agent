@@ -34,7 +34,8 @@ def format_precedents(slots: list[MemorySlot]) -> str:
     lines = ["Past precedents (ticket -> action taken):"]
     for slot in slots:
         outcome = "correct" if slot.correct else "incorrect"
-        lines.append(f'- "{slot.text}" -> {slot.action} ({outcome})')
+        text = " ".join(slot.text.split())
+        lines.append(f'- "{text}" -> {slot.action} ({outcome})')
     return "\n".join(lines)
 
 

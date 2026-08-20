@@ -6,6 +6,7 @@ directly compute the ground-truth correct action for the current ticket,
 handing it to the policy as a stated fact rather than a learned precedent.
 """
 from env.generator import Ticket, TicketGenerator, resolve_correct_action
+from memory.base import MemorySlot
 
 
 class OracleMemory:
@@ -20,6 +21,7 @@ class OracleMemory:
     def __init__(self, budget: int, generator: TicketGenerator):
         self.budget = budget
         self.generator = generator
+        self.slots: list[MemorySlot] = []
 
     def write(self, ticket: Ticket, action: str, correct: bool) -> None:
         pass

@@ -43,6 +43,25 @@ def test_format_precedents_includes_text_and_action_for_each_slot():
     assert "ACTION_2" in result
 
 
+def test_format_precedents_collapses_multiline_ticket_text_to_one_line():
+    from env.generator import TicketGenerator
+
+    generator = TicketGenerator(alpha=1.0, seed=3, n_tenants=5)
+    ticket = generator.sample(0)
+    assert "\n" in ticket.text  # real generator output is multi-line
+
+    slots = [MemorySlot(text=ticket.text, action="ACTION_1", correct=True)]
+    result = format_precedents(slots)
+
+    # Header line + exactly one line per precedent -> exactly one newline
+    # for a single-slot list, and no embedded newline inside the rendered
+    # precedent line itself.
+    lines = result.split("\n")
+    assert len(lines) == 2
+    assert "\n" not in lines[1]
+    assert "->" in lines[1] and "ACTION_1" in lines[1]
+
+
 def test_base_memory_cannot_be_instantiated_directly():
     with pytest.raises(TypeError):
         BaseMemory(budget=4)
