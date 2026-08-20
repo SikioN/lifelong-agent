@@ -31,6 +31,13 @@ ENTRYPOINT = "{entrypoint}"
 
 
 def main() -> None:
+    # Clear any stale HuggingFace Hub cache/lock files left over from a
+    # previous kernel version on this instance before doing anything else
+    # -- rules out a corrupted cache or a stuck lock file as a contributor
+    # to the weight-loading hang seen on earlier runs. Kaggle instances are
+    # ephemeral, so this just means a fresh download, nothing is lost.
+    shutil.rmtree(Path.home() / ".cache" / "huggingface", ignore_errors=True)
+
     subprocess.run(["git", "clone", REPO_URL, "repo"], check=True)
     subprocess.run(["git", "-C", "repo", "checkout", REPO_COMMIT], check=True)
     subprocess.run(
