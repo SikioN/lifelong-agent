@@ -1,9 +1,9 @@
 {
   "id": "nmuravya/lifelong-agent-stage-2",
   "title": "Lifelong Agent Stage 2",
-  "code_file": "kernel_template.py",
+  "code_file": "kernel_template.ipynb",
   "language": "python",
-  "kernel_type": "script",
+  "kernel_type": "notebook",
   "is_private": "true",
   "accelerator": "GPU_T4x2",
   "enable_internet": "true",

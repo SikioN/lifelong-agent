@@ -59,14 +59,47 @@ def render_kernel_script(repo_commit: str, entrypoint: str) -> str:
     return KERNEL_SCRIPT_TEMPLATE.format(repo_commit=repo_commit, entrypoint=entrypoint)
 
 
-def push(kernel_dir: Path, repo_commit: str, entrypoint: str) -> str:
-    """Renders the kernel script for (repo_commit, entrypoint), writes it
-    alongside kernel-metadata.json in kernel_dir, pushes via the kaggle
-    CLI, and returns the kernel id read from kernel-metadata.json."""
+def render_kernel_notebook(repo_commit: str, entrypoint: str) -> str:
+    """Wraps render_kernel_script()'s Python source into a minimal
+    single-cell Jupyter notebook (nbformat 4). Same content, same
+    reviewed logic as the script kernel -- this is only a different
+    container format for Kaggle's notebook-kernel UI, not new logic
+    living in a hand-edited notebook."""
     script = render_kernel_script(repo_commit, entrypoint)
-    (kernel_dir / "kernel_template.py").write_text(script)
-    subprocess.run(["kaggle", "kernels", "push", "-p", str(kernel_dir)], check=True)
+    notebook = {
+        "cells": [
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": script.splitlines(keepends=True),
+            }
+        ],
+        "metadata": {
+            "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+            "language_info": {"name": "python", "version": "3"},
+        },
+        "nbformat": 4,
+        "nbformat_minor": 5,
+    }
+    return json.dumps(notebook, indent=1)
+
+
+def push(kernel_dir: Path, repo_commit: str, entrypoint: str) -> str:
+    """Renders the kernel payload for (repo_commit, entrypoint) in
+    whichever format kernel-metadata.json's code_file specifies (.py for
+    a script kernel, .ipynb for a notebook kernel -- same underlying
+    logic either way), writes it into kernel_dir, pushes via the kaggle
+    CLI, and returns the kernel id read from kernel-metadata.json."""
     metadata = json.loads((kernel_dir / "kernel-metadata.json").read_text())
+    code_file = kernel_dir / metadata["code_file"]
+    if code_file.suffix == ".ipynb":
+        content = render_kernel_notebook(repo_commit, entrypoint)
+    else:
+        content = render_kernel_script(repo_commit, entrypoint)
+    code_file.write_text(content)
+    subprocess.run(["kaggle", "kernels", "push", "-p", str(kernel_dir)], check=True)
     return metadata["id"]
 
 

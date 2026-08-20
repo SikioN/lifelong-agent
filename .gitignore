@@ -59,3 +59,11 @@ docs/materials/arXiv-2605.10870v1/*.pdf
 # development (see CLAUDE.md / README.md). It is not part of the published
 # plugin, so the whole directory is ignored here.
 evals/
+
+# Generated at push-time by kaggle_runner/orchestrate.py's push() -- not
+# hand-edited, not the source of truth (that's the KERNEL_SCRIPT_TEMPLATE
+# in orchestrate.py). kaggle_runner/runs/ (pulled real-run evidence) is
+# NOT ignored -- that's committed deliberately, matching the project's
+# existing precedent of committing env/manipulation_check_output/.
+kaggle_runner/kernel_template.py
+kaggle_runner/kernel_template.ipynb
