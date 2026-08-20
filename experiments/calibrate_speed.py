@@ -18,6 +18,12 @@ N_CALIBRATION_TICKETS = 60
 NEAR_CEILING_THRESHOLD = 0.85
 CHANCE_TOLERANCE = 0.10  # accuracy must land within +/- this of 1/|A|
 
+DEFAULT_THROUGHPUT_BATCH_SIZE = 4  # 16 OOMs on realistic dev hardware (confirmed:
+# ~10.87 GiB for the full-vocab log_softmax at batch_size=16, 8 candidates,
+# ~150-token sequences) -- 4 is proven safe (already used by this file's own
+# test). The real Kaggle T4 throughput number Task 6 measures for the actual
+# gate decision has far more headroom and isn't affected by this local default.
+
 # Grid sizes computed directly from docs/materials/PLAN.md's "Этапы выполнения"
 # Stage 4/5 rows (not the rougher "~50k+~14k" aside elsewhere in that doc --
 # this calibration is exactly what should be trusted if the two disagree):
@@ -96,7 +102,7 @@ def run_chance_check_calibrated(
     return correct / n_tickets
 
 
-def measure_batch_seconds_per_step(policy: ClosedSetPolicy, batch_size: int = 16) -> float:
+def measure_batch_seconds_per_step(policy: ClosedSetPolicy, batch_size: int = DEFAULT_THROUGHPUT_BATCH_SIZE) -> float:
     """Wall-clock seconds per ticket-decision for one batched closed-set
     scoring call (batch_size tickets x len(ACTION_LABELS) candidates each),
     used to project total grid time. A "step" in the real grid is exactly
@@ -124,7 +130,7 @@ def main() -> None:
     chance_target = 1 / len(ACTION_LABELS)
     print(f"near-ceiling accuracy (rule given, alpha=0): {near_ceiling_acc:.3f}")
     print(f"calibrated chance accuracy (no rule, no memory): {chance_acc:.3f}  (target ~{chance_target:.3f})")
-    print(f"measured seconds/step (batched, batch=16):    {seconds_per_step:.4f}")
+    print(f"measured seconds/step (batched, batch={DEFAULT_THROUGHPUT_BATCH_SIZE}):    {seconds_per_step:.4f}")
     print(f"projected total grid steps:                   {TOTAL_GRID_STEPS:,}")
     print(f"projected total grid time:                    {projected_total_seconds / 3600:.2f} hours")
 
