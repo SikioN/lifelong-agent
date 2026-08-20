@@ -9,6 +9,7 @@ Run directly: `uv run python -m experiments.calibrate_speed`
 import time
 
 import numpy as np
+from tqdm import tqdm
 
 from agent.policy import ClosedSetPolicy, calibrate_scores
 from agent.prompt_templates import build_prompt, render_rule_context
@@ -50,7 +51,7 @@ def run_near_ceiling_check(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATI
     generator = TicketGenerator(alpha=0.0, seed=777)
     rule_context = render_rule_context(generator.default_action_map)
     correct = 0
-    for step in range(n_tickets):
+    for step in tqdm(range(n_tickets), desc="near-ceiling"):
         ticket = generator.sample(step)
         prompt = build_prompt(ticket.text, ACTION_LABELS, rule_context=rule_context)
         prediction = policy.predict(prompt, ACTION_LABELS)
@@ -66,7 +67,7 @@ def run_chance_check(policy: ClosedSetPolicy, n_tickets: int = N_CALIBRATION_TIC
     knowledge or the scoring has a systematic bias (e.g. length bias)."""
     generator = TicketGenerator(alpha=0.0, seed=778)
     correct = 0
-    for step in range(n_tickets):
+    for step in tqdm(range(n_tickets), desc="raw chance"):
         ticket = generator.sample(step)
         prompt = build_prompt(ticket.text, ACTION_LABELS)
         prediction = policy.predict(prompt, ACTION_LABELS)
@@ -92,7 +93,7 @@ def run_chance_check_calibrated(
     optional extra."""
     generator = TicketGenerator(alpha=0.0, seed=778)
     correct = 0
-    for step in range(n_tickets):
+    for step in tqdm(range(n_tickets), desc="calibrated chance"):
         ticket = generator.sample(step)
         prompt = build_prompt(ticket.text, ACTION_LABELS)
         raw_scores = policy.score_candidates(prompt, ACTION_LABELS)
@@ -128,11 +129,11 @@ def main() -> None:
     projected_total_seconds = seconds_per_step * TOTAL_GRID_STEPS
 
     chance_target = 1 / len(ACTION_LABELS)
-    print(f"near-ceiling accuracy (rule given, alpha=0): {near_ceiling_acc:.3f}")
-    print(f"calibrated chance accuracy (no rule, no memory): {chance_acc:.3f}  (target ~{chance_target:.3f})")
-    print(f"measured seconds/step (batched, batch={DEFAULT_THROUGHPUT_BATCH_SIZE}):    {seconds_per_step:.4f}")
-    print(f"projected total grid steps:                   {TOTAL_GRID_STEPS:,}")
-    print(f"projected total grid time:                    {projected_total_seconds / 3600:.2f} hours")
+    print(f"near-ceiling accuracy (rule given, alpha=0): {near_ceiling_acc:.3f}", flush=True)
+    print(f"calibrated chance accuracy (no rule, no memory): {chance_acc:.3f}  (target ~{chance_target:.3f})", flush=True)
+    print(f"measured seconds/step (batched, batch={DEFAULT_THROUGHPUT_BATCH_SIZE}):    {seconds_per_step:.4f}", flush=True)
+    print(f"projected total grid steps:                   {TOTAL_GRID_STEPS:,}", flush=True)
+    print(f"projected total grid time:                    {projected_total_seconds / 3600:.2f} hours", flush=True)
 
     assert near_ceiling_acc >= NEAR_CEILING_THRESHOLD, (
         f"GATE FAILED: near-ceiling accuracy {near_ceiling_acc:.3f} < {NEAR_CEILING_THRESHOLD}"
@@ -147,7 +148,7 @@ def main() -> None:
         f"across multiple Kaggle kernel runs rather than raising this budget"
     )
 
-    print("\nGATE PASSED.")
+    print("\nGATE PASSED.", flush=True)
 
 
 if __name__ == "__main__":

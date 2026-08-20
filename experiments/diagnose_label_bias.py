@@ -22,6 +22,8 @@ import json
 import os
 from pathlib import Path
 
+from tqdm import tqdm
+
 from agent.policy import ClosedSetPolicy
 from env.generator import ACTION_LABELS
 from experiments.calibrate_speed import (
@@ -64,26 +66,26 @@ def main() -> None:
     candidate_models = raw.split(",") if raw else DEFAULT_CANDIDATE_MODELS
 
     chance_target = 1 / len(ACTION_LABELS)
-    print(f"Backbone sweep -- chance target: {chance_target:.3f}\n")
+    print(f"Backbone sweep -- chance target: {chance_target:.3f}\n", flush=True)
 
     results = []
-    for model_name in candidate_models:
-        print(f"=== {model_name} ===")
+    for model_name in tqdm(candidate_models, desc="backbone sweep"):
+        print(f"=== {model_name} ===", flush=True)
         policy = ClosedSetPolicy(model_name)
         result = diagnose_bias(policy)
         result["model_name"] = model_name
-        print(f"  near-ceiling accuracy:      {result['near_ceiling_accuracy']:.3f}")
-        print(f"  raw chance accuracy:        {result['raw_chance_accuracy']:.3f}")
-        print(f"  calibrated chance accuracy: {result['calibrated_chance_accuracy']:.3f}")
-        print(f"  seconds/step:               {result['seconds_per_step']:.4f}")
-        print(f"  label prior:                {[round(p, 2) for p in result['label_prior']]}\n")
+        print(f"  near-ceiling accuracy:      {result['near_ceiling_accuracy']:.3f}", flush=True)
+        print(f"  raw chance accuracy:        {result['raw_chance_accuracy']:.3f}", flush=True)
+        print(f"  calibrated chance accuracy: {result['calibrated_chance_accuracy']:.3f}", flush=True)
+        print(f"  seconds/step:               {result['seconds_per_step']:.4f}", flush=True)
+        print(f"  label prior:                {[round(p, 2) for p in result['label_prior']]}\n", flush=True)
         results.append(result)
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     output_path = OUTPUT_DIR / "backbone_sweep.json"
     with open(output_path, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"Results written to {output_path}")
+    print(f"Results written to {output_path}", flush=True)
 
 
 if __name__ == "__main__":
