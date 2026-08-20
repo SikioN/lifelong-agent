@@ -1,0 +1,14 @@
+{
+  "id": "nmuravya/lifelong-agent-stage2",
+  "title": "Lifelong Agent Stage 2",
+  "code_file": "kernel_template.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "accelerator": "GPU_T4x2",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
