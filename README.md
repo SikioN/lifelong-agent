@@ -39,6 +39,13 @@ also contains unrelated third-party (superpowers) test files.
 
 ## Status
 
-Stage 2 in progress — policy wrapper and calibration built and reviewed
-(commit `e1fc413`). Execution moved to Kaggle T4 (no local GPU); see
-[`docs/implementation-plans/2026-08-20-stage2-kaggle-redo-design.md`](docs/implementation-plans/2026-08-20-stage2-kaggle-redo-design.md).
+Stage 2 complete -- policy wrapper, label-prior calibration, and a real
+GPU-based gate confirmation all reviewed and passing (backbone:
+`Qwen2.5-1.5B-Instruct`, near-ceiling=1.000, calibrated chance=0.150).
+Execution moved from a local MacBook (insufficient) through Kaggle to
+Google Colab (single T4) after real, evidence-driven infrastructure
+findings -- see [`docs/materials/PLAN.md`](docs/materials/PLAN.md)'s
+Архитектурная правка 3 and
+[`docs/implementation-plans/2026-08-20-stage2-kaggle-redo-design.md`](docs/implementation-plans/2026-08-20-stage2-kaggle-redo-design.md)
+for the full story. The real Stage 4/5 grid (177,500 steps) will need to
+be split across multiple GPU sessions rather than run in one.
