@@ -25,7 +25,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 from env.generator import Ticket
-from memory.certification import ContextActionStats
+from memory.certification import ContextActionStats, cannot_link
 from memory.semantic_mem import DEFAULT_ENCODER_NAME, _cosine_similarity
 
 DELTA = 0.05  # confidence-bound failure probability (paper's delta)
@@ -130,4 +130,59 @@ class DecisionAwareMemory:
         x = context_key(ticket.text)
         self._embedding_for(x, ticket)
         self._stats.update(x, action, 1.0 if correct else 0.0)
-        self._route(x, ticket)
+        slot = self._route(x, ticket)
+        self._resolve_conflicts(slot, x)
+
+    def _resolve_conflicts(self, slot: Slot, x: str) -> None:
+        for x2 in slot.members - {x}:
+            is_conflict = (
+                cannot_link(self._stats, x, x2, self.action_space, self._t, DELTA, EPSILON_CONFLICT)
+                if self.certified
+                else self._naive_conflict(x, x2)
+            )
+            if is_conflict:
+                self._split_or_overwrite(slot, x, x2)
+                return
+
+    def _naive_conflict(self, x: str, x2: str) -> bool:
+        """H2's naive comparison point: any disagreement between the two
+        contexts' current best empirical action, no statistical margin."""
+        best_x = max(self.action_space, key=lambda a: self._stats.mu(x, a))
+        best_x2 = max(self.action_space, key=lambda a: self._stats.mu(x2, a))
+        return (
+            best_x != best_x2
+            and self._stats.n(x, best_x) > 0
+            and self._stats.n(x2, best_x2) > 0
+        )
+
+    def _split_or_overwrite(self, slot: Slot, x: str, x2: str) -> None:
+        embedding = self._embeddings[x]
+        if self.split_on_conflict:
+            slot.drop_member(x)
+            if len(self.slots) < self.budget:
+                self.slots.append(Slot(x, embedding))
+                return
+            other_slots = [s for s in self.slots if s is not slot]
+            if not other_slots:
+                slot.add_member(x, embedding)
+                return
+            weakest = min(other_slots, key=self._slot_value)
+            self.slots.remove(weakest)
+            self.slots.append(Slot(x, embedding))
+        else:
+            slot.members = {x}
+            slot.centroid = embedding
+
+    def _slot_value(self, slot: Slot) -> float:
+        """Accumulated decision-utility: pooled best-action empirical mean
+        across the slot's members (PLAN.md: eviction is by decision-
+        utility, not recency/random)."""
+        best_action = self._slot_best_action(slot)
+        if best_action is None:
+            return 0.0
+        values = [
+            self._stats.mu(m, best_action)
+            for m in slot.members
+            if self._stats.n(m, best_action) > 0
+        ]
+        return sum(values) / len(values) if values else 0.0
