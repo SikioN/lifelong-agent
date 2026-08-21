@@ -6,6 +6,8 @@ docs/materials/PLAN.md's Stage 3 row.
 
 Run directly: `uv run python -m experiments.smoke_memory_methods`
 """
+from tqdm import tqdm
+
 from agent.policy import ClosedSetPolicy
 from agent.prompt_templates import build_prompt
 from env.generator import ACTION_LABELS, TicketGenerator
@@ -43,12 +45,14 @@ def run_smoke(
     prior,
     generator: TicketGenerator,
     n_steps: int = SMOKE_N_STEPS,
+    show_progress: bool = False,
 ) -> float:
     """Runs the agent loop for n_steps: retrieve memory context, predict
     (calibrated), score correctness, write the outcome back to memory.
     Returns overall accuracy."""
     correct = 0
-    for step in range(n_steps):
+    steps = tqdm(range(n_steps), desc=method_name, leave=False) if show_progress else range(n_steps)
+    for step in steps:
         ticket = generator.sample(step)
         memory_context = memory.retrieve(ticket)
         prompt = build_prompt(ticket.text, ACTION_LABELS, memory_context=memory_context)
@@ -63,14 +67,19 @@ def main() -> None:
     policy = ClosedSetPolicy()
     prior = policy.measure_label_prior(neutral_prompt(), ACTION_LABELS)
 
-    for alpha in SMOKE_ALPHAS:
-        print(f"=== alpha={alpha} ===")
-        for method_name in MEMORY_METHOD_NAMES:
-            generator = TicketGenerator(alpha=alpha, seed=1, n_tenants=10)
-            memory = build_memory(method_name, SMOKE_BUDGET, generator)
-            accuracy = run_smoke(method_name, memory, policy, prior, generator)
-            degenerate = " <-- DEGENERATE" if accuracy in (0.0, 1.0) else ""
-            print(f"  {method_name:10s} accuracy={accuracy:.3f}{degenerate}")
+    combos = [(alpha, method_name) for alpha in SMOKE_ALPHAS for method_name in MEMORY_METHOD_NAMES]
+    overall = tqdm(combos, desc="Stage 3 smoke gate")
+    current_alpha = None
+    for alpha, method_name in overall:
+        if alpha != current_alpha:
+            current_alpha = alpha
+            print(f"=== alpha={alpha} ===")
+        overall.set_postfix(alpha=alpha, method=method_name)
+        generator = TicketGenerator(alpha=alpha, seed=1, n_tenants=10)
+        memory = build_memory(method_name, SMOKE_BUDGET, generator)
+        accuracy = run_smoke(method_name, memory, policy, prior, generator, show_progress=True)
+        degenerate = " <-- DEGENERATE" if accuracy in (0.0, 1.0) else ""
+        tqdm.write(f"  {method_name:10s} accuracy={accuracy:.3f}{degenerate}")
 
 
 if __name__ == "__main__":
