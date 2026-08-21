@@ -123,3 +123,78 @@ def test_slots_still_never_exceed_budget_after_conflicts(encoder):
         for _ in range(5):
             mem.write(_ticket(i, text), action=action, correct=True)
     assert len(mem.slots) <= 2
+
+
+def test_certified_and_naive_modes_diverge_under_a_returning_context(encoder):
+    """H2's actual comparison: same shared slot (topic A + topic B,
+    decision-incompatible: A wants ACTION_0, B wants ACTION_1), same
+    conflicting input, but the two policies react on different evidence.
+
+    NOTE on what "diverge" means here: both policies eventually converge
+    on separated slots for A and B once budget headroom lets a fresh slot
+    be created for whichever context gets displaced (self-healing) -- the
+    underlying per-context stats (memory._stats) persist independently of
+    slot membership, so final slot topology after many rounds is NOT the
+    distinguishing signal (an earlier version of this test asserted final
+    topology and was wrong: naive settles into the same two-slot shape as
+    certified within ~2 rounds here, just via a cruder path). The REAL,
+    deterministic divergence is WHEN each policy acts: naive collapses the
+    shared slot after a SINGLE disagreement with no statistical
+    justification (could be noise), while certified requires accumulated
+    evidence and refuses to touch the slot until cannot_link's confidence
+    bound actually certifies the conflict.
+
+    Each topic tries BOTH actions under certified mode (one good, one
+    bad) -- certification requires the competing action to actually be
+    tried on both contexts, or the untried action's trivial UCB=1 bound
+    prevents cannot_link from ever certifying anything (see Task 3's
+    review). Naive mode only needs a single sample per topic, per
+    _naive_conflict's own (simpler, already-approved) logic."""
+    def build_shared_slot(mem):
+        slot = mem._route(context_key("topic A ticket"), _ticket(0, "topic A ticket"))
+        slot.add_member(
+            context_key("topic B ticket"),
+            mem._embedding_for(context_key("topic B ticket"), _ticket(1, "topic B ticket")),
+        )
+        return slot
+
+    certified_mem = DecisionAwareMemory(budget=3, encoder=encoder, action_space=["ACTION_0", "ACTION_1"])
+    certified_slot = build_shared_slot(certified_mem)
+    naive_mem = DecisionAwareMemory(
+        budget=3, encoder=encoder, action_space=["ACTION_0", "ACTION_1"],
+        certified=False, split_on_conflict=False,
+    )
+    naive_slot = build_shared_slot(naive_mem)
+
+    # Round 1, same conflicting input to both. Naive: a single disagreement
+    # is enough -- the shared slot is overwritten immediately, keeping only
+    # whichever context was written last (topic B).
+    naive_mem.write(_ticket(0, "topic A ticket"), action="ACTION_0", correct=True)
+    naive_mem.write(_ticket(1, "topic B ticket"), action="ACTION_1", correct=True)
+    assert naive_slot.members == {context_key("topic B ticket")}
+
+    # Certified: one round of (admittedly slim) evidence is not enough to
+    # certify a conflict -- the slot must remain shared, unlike naive's
+    # immediate, statistically unjustified overwrite above.
+    certified_mem.write(_ticket(0, "topic A ticket"), action="ACTION_0", correct=True)
+    certified_mem.write(_ticket(0, "topic A ticket"), action="ACTION_1", correct=False)
+    certified_mem.write(_ticket(1, "topic B ticket"), action="ACTION_1", correct=True)
+    certified_mem.write(_ticket(1, "topic B ticket"), action="ACTION_0", correct=False)
+    assert certified_slot.members == {context_key("topic A ticket"), context_key("topic B ticket")}
+
+    # Keep accumulating real evidence for certified mode until the conflict
+    # is genuinely certified -- unlike naive, this takes real evidence, not
+    # a single sample.
+    for _ in range(199):
+        certified_mem.write(_ticket(0, "topic A ticket"), action="ACTION_0", correct=True)
+        certified_mem.write(_ticket(0, "topic A ticket"), action="ACTION_1", correct=False)
+        certified_mem.write(_ticket(1, "topic B ticket"), action="ACTION_1", correct=True)
+        certified_mem.write(_ticket(1, "topic B ticket"), action="ACTION_0", correct=False)
+
+    # certified: the conflict is now statistically certified, so topic B
+    # was split into its own slot -- topic A's original slot no longer
+    # contains topic B, and still recommends topic A's own best action.
+    final_certified_slot = certified_mem._slot_for(context_key("topic A ticket"))
+    assert context_key("topic B ticket") not in final_certified_slot.members
+    certified_context = certified_mem.retrieve(_ticket(99, "topic A ticket"))
+    assert "ACTION_0" in certified_context
