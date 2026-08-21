@@ -1,9 +1,8 @@
-"""Stage 3 Go/No-Go gate: runs each of the four baseline memory methods
-(Random-K, Recency, Semantic-RAG, Oracle) for real over a short ticket
-stream at a given alpha, and reports accuracy -- no crashes, no degenerate
-(0%/100%) accuracy is the acceptance bar per docs/materials/PLAN.md's
-Stage 3 row. Decision-Aware is a separate, follow-up plan and is not
-included here.
+"""Stage 3 Go/No-Go gate: runs each of the five memory methods
+(Random-K, Recency, Semantic-RAG, Oracle, Decision-Aware) for real over a
+short ticket stream at a given alpha, and reports accuracy -- no crashes,
+no degenerate (0%/100%) accuracy is the acceptance bar per
+docs/materials/PLAN.md's Stage 3 row.
 
 Run directly: `uv run python -m experiments.smoke_memory_methods`
 """
@@ -11,12 +10,13 @@ from agent.policy import ClosedSetPolicy
 from agent.prompt_templates import build_prompt
 from env.generator import ACTION_LABELS, TicketGenerator
 from experiments.calibrate_speed import neutral_prompt
+from memory.decision_aware_mem import DecisionAwareMemory
 from memory.oracle_mem import OracleMemory
 from memory.random_mem import RandomMemory
 from memory.recency_mem import RecencyMemory
 from memory.semantic_mem import SemanticMemory
 
-MEMORY_METHOD_NAMES = ["random", "recency", "semantic", "oracle"]
+MEMORY_METHOD_NAMES = ["random", "recency", "semantic", "oracle", "decision_aware"]
 SMOKE_N_STEPS = 20
 SMOKE_BUDGET = 4
 SMOKE_ALPHAS = [0.0, 0.5]
@@ -31,6 +31,8 @@ def build_memory(method_name: str, budget: int, generator: TicketGenerator, seed
         return SemanticMemory(budget=budget)
     if method_name == "oracle":
         return OracleMemory(budget=budget, generator=generator)
+    if method_name == "decision_aware":
+        return DecisionAwareMemory(budget=budget, action_space=list(ACTION_LABELS))
     raise ValueError(f"unknown memory method: {method_name}")
 
 
