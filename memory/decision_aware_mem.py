@@ -1,10 +1,12 @@
 """Decision-Aware memory: this project's central research contribution
-(DeMem-lite). A new memory slot is created only on a statistically
-CERTIFIED decision conflict (memory.certification.cannot_link), not by a
-similarity threshold -- see Task 3 for that logic. Eviction, when the
-slot budget is full, removes the slot with the lowest accumulated
-decision-utility, not the oldest or a random one (docs/materials/PLAN.md's
-Methods section, item 4).
+(DeMem-lite). A shared slot is split into two only on a statistically
+CERTIFIED decision conflict between its members (memory.certification.
+cannot_link) -- not by a similarity threshold. (New slots for genuinely
+new, never-seen micro-contexts are created unconditionally while under
+budget; certification only governs splitting contexts that already share
+a slot.) Eviction, when the slot budget is full, removes the slot with
+the lowest accumulated decision-utility, not the oldest or a random one
+(docs/materials/PLAN.md's Methods section, item 4).
 
 Uses the SAME embedding model as Semantic-RAG (all-MiniLM-L6-v2) for
 routing an unseen micro-context to its nearest existing slot -- the
@@ -76,6 +78,7 @@ class DecisionAwareMemory:
         self._stats = ContextActionStats()
         self._embeddings: dict[str, np.ndarray] = {}
         self._t = 0
+        self.n_splits: int = 0
 
     def _slot_for(self, x: str) -> Slot | None:
         for slot in self.slots:
@@ -117,9 +120,26 @@ class DecisionAwareMemory:
             return None
         return max(self.action_space, key=lambda a: pooled_mu[a])
 
+    def _lookup_slot(self, x: str, ticket: Ticket) -> Slot | None:
+        """Read-only: returns the slot x is already a member of, or the
+        nearest existing slot by similarity if x is unassigned and slots
+        exist, WITHOUT creating a new slot or mutating any slot's
+        membership/centroid. Returns None only if there are no slots at
+        all yet (nothing to route to)."""
+        existing = self._slot_for(x)
+        if existing is not None:
+            return existing
+        if not self.slots:
+            return None
+        embedding = self._embedding_for(x, ticket)
+        similarities = [_cosine_similarity(embedding, s.centroid) for s in self.slots]
+        return self.slots[int(np.argmax(similarities))]
+
     def retrieve(self, ticket: Ticket) -> str:
         x = context_key(ticket.text)
-        slot = self._route(x, ticket)
+        slot = self._lookup_slot(x, ticket)
+        if slot is None:
+            return ""
         best_action = self._slot_best_action(slot)
         if best_action is None:
             return ""
@@ -159,8 +179,11 @@ class DecisionAwareMemory:
         embedding = self._embeddings[x]
         if self.split_on_conflict:
             slot.drop_member(x)
+            if slot.members:
+                slot.centroid = np.mean([self._embeddings[m] for m in slot.members], axis=0)
             if len(self.slots) < self.budget:
                 self.slots.append(Slot(x, embedding))
+                self.n_splits += 1
                 return
             other_slots = [s for s in self.slots if s is not slot]
             if not other_slots:
@@ -169,20 +192,24 @@ class DecisionAwareMemory:
             weakest = min(other_slots, key=self._slot_value)
             self.slots.remove(weakest)
             self.slots.append(Slot(x, embedding))
+            self.n_splits += 1
         else:
             slot.members = {x}
             slot.centroid = embedding
 
     def _slot_value(self, slot: Slot) -> float:
-        """Accumulated decision-utility: pooled best-action empirical mean
-        across the slot's members (PLAN.md: eviction is by decision-
-        utility, not recency/random)."""
+        """Accumulated decision-utility: pooled (n-weighted) best-action
+        empirical mean across the slot's members (PLAN.md: eviction is by
+        decision-utility, not recency/random)."""
         best_action = self._slot_best_action(slot)
         if best_action is None:
             return 0.0
-        values = [
-            self._stats.mu(m, best_action)
-            for m in slot.members
-            if self._stats.n(m, best_action) > 0
-        ]
-        return sum(values) / len(values) if values else 0.0
+        total_n = 0
+        weighted_sum = 0.0
+        for member in slot.members:
+            n = self._stats.n(member, best_action)
+            if n == 0:
+                continue
+            weighted_sum += self._stats.mu(member, best_action) * n
+            total_n += n
+        return weighted_sum / total_n if total_n > 0 else 0.0

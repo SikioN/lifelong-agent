@@ -1,12 +1,17 @@
-"""Tests for memory/decision_aware_mem.py's routing skeleton (Task 2) --
-conflict detection and slot splitting land in Task 3; these tests only
-exercise context_key, Slot, and write/retrieve's routing + pooled-action
-lookup, with all observations kept decision-COMPATIBLE (no conflicts) so
-routing behavior can be tested in isolation."""
+"""Tests for memory/decision_aware_mem.py: context_key, Slot, and
+write/retrieve's routing + pooled-action lookup, plus certified conflict
+detection and slot splitting (memory.certification.cannot_link), naive
+overwrite mode, eviction under budget pressure (including which slot gets
+evicted, by decision-utility), retrieve()'s read-only behavior, and
+centroid maintenance after a split. Some tests use observations kept
+decision-COMPATIBLE (no conflicts) so routing behavior can be tested in
+isolation; others deliberately seed decision-INCOMPATIBLE evidence to
+exercise the conflict/split machinery."""
+import numpy as np
 import pytest
 from sentence_transformers import SentenceTransformer
 
-from env.generator import Ticket
+from env.generator import ACTION_LABELS, Ticket
 from memory.decision_aware_mem import DecisionAwareMemory, context_key
 
 
@@ -147,8 +152,10 @@ def test_certified_and_naive_modes_diverge_under_a_returning_context(encoder):
     Each topic tries BOTH actions under certified mode (one good, one
     bad) -- certification requires the competing action to actually be
     tried on both contexts, or the untried action's trivial UCB=1 bound
-    prevents cannot_link from ever certifying anything (see Task 3's
-    review). Naive mode only needs a single sample per topic, per
+    prevents cannot_link from ever certifying anything (see this file's
+    test_certification_requires_full_action_space_exploration_at_production_scale
+    for a full demonstration of this limitation at production scale).
+    Naive mode only needs a single sample per topic, per
     _naive_conflict's own (simpler, already-approved) logic."""
     def build_shared_slot(mem):
         slot = mem._route(context_key("topic A ticket"), _ticket(0, "topic A ticket"))
@@ -198,3 +205,80 @@ def test_certified_and_naive_modes_diverge_under_a_returning_context(encoder):
     assert context_key("topic B ticket") not in final_certified_slot.members
     certified_context = certified_mem.retrieve(_ticket(99, "topic A ticket"))
     assert "ACTION_0" in certified_context
+
+
+def test_certification_requires_full_action_space_exploration_at_production_scale(encoder):
+    """Documents a real property of the certification math (confirmed by
+    the Decision-Aware plan's final whole-branch review): cannot_link
+    requires every action in action_space to be explored on at least one
+    of the two compared contexts before it can certify a conflict -- an
+    untried action's trivial UCB=1 bound prevents certification regardless
+    of evidence for the contested actions. At the production 8-action
+    space, exploring only the two decision-relevant actions (as a
+    near-greedy policy naturally would) never certifies a conflict, no
+    matter how many observations accumulate."""
+    mem = DecisionAwareMemory(budget=3, encoder=encoder, action_space=list(ACTION_LABELS))
+    slot = mem._route(context_key("topic A ticket"), _ticket(0, "topic A ticket"))
+    slot.add_member(
+        context_key("topic B ticket"),
+        mem._embedding_for(context_key("topic B ticket"), _ticket(1, "topic B ticket")),
+    )
+    # Only explore the two decision-relevant actions (ACTION_0 for A,
+    # ACTION_1 for B) -- the other 6 actions in the 8-action space stay
+    # untried, matching a realistic near-greedy policy's behavior.
+    for _ in range(500):
+        mem.write(_ticket(0, "topic A ticket"), action="ACTION_0", correct=True)
+        mem.write(_ticket(1, "topic B ticket"), action="ACTION_1", correct=True)
+    final_slot = mem._slot_for(context_key("topic A ticket"))
+    # documents the real limitation: no split occurred despite 500 rounds
+    # of strong, consistent, mutually-exclusive evidence, because 6 of 8
+    # actions were never explored on either context.
+    assert context_key("topic B ticket") in final_slot.members
+    assert mem.n_splits == 0
+
+
+def test_retrieve_does_not_mutate_memory_state(encoder):
+    mem = DecisionAwareMemory(budget=4, encoder=encoder, action_space=["ACTION_0", "ACTION_1"])
+    assert len(mem.slots) == 0
+    mem.retrieve(_ticket(0, "topic A ticket"))
+    mem.retrieve(_ticket(1, "topic B ticket"))
+    assert len(mem.slots) == 0
+
+
+def test_drop_member_recomputes_centroid(encoder):
+    mem = DecisionAwareMemory(budget=3, encoder=encoder, action_space=["ACTION_0", "ACTION_1"])
+    slot = mem._route(context_key("topic A ticket"), _ticket(0, "topic A ticket"))
+    slot.add_member(
+        context_key("topic B ticket"),
+        mem._embedding_for(context_key("topic B ticket"), _ticket(1, "topic B ticket")),
+    )
+    old_shared_centroid = slot.centroid.copy()
+    for _ in range(200):
+        mem.write(_ticket(0, "topic A ticket"), action="ACTION_0", correct=True)
+        mem.write(_ticket(0, "topic A ticket"), action="ACTION_1", correct=False)
+        mem.write(_ticket(1, "topic B ticket"), action="ACTION_1", correct=True)
+        mem.write(_ticket(1, "topic B ticket"), action="ACTION_0", correct=False)
+    final_slot = mem._slot_for(context_key("topic A ticket"))
+    assert not np.array_equal(final_slot.centroid, old_shared_centroid)
+
+
+def test_eviction_selects_the_lowest_utility_slot_not_arbitrary(encoder):
+    mem = DecisionAwareMemory(budget=2, encoder=encoder, action_space=["ACTION_0", "ACTION_1"])
+    # slot 1: well-evidenced, high utility
+    for _ in range(200):
+        mem.write(_ticket(0, "strong topic"), action="ACTION_0", correct=True)
+    # slot 2: well-evidenced, low utility
+    for _ in range(200):
+        mem.write(_ticket(1, "weak topic"), action="ACTION_0", correct=False)
+    assert len(mem.slots) == 2
+    strong_slot = mem._slot_for(context_key("strong topic"))
+    weak_slot = mem._slot_for(context_key("weak topic"))
+    strong_value = mem._slot_value(strong_slot)
+    weak_value = mem._slot_value(weak_slot)
+    assert strong_value > weak_value
+    # Directly exercise the eviction path exactly as _split_or_overwrite
+    # uses it: at full budget, min(other_slots, key=mem._slot_value) must
+    # select the weak slot, not the strong one.
+    other_slots = [s for s in mem.slots if s is not strong_slot]
+    weakest = min(other_slots, key=mem._slot_value)
+    assert weakest is weak_slot

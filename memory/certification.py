@@ -83,7 +83,18 @@ def cannot_link(
 ) -> bool:
     """True iff the data certify x and x' cannot share a memory slot of
     radius <= epsilon: d_under_t(x,x') = min_a max(Delta_under_t(x,a),
-    Delta_under_t(x',a)) > epsilon."""
+    Delta_under_t(x',a)) > epsilon.
+
+    Precondition for a useful (non-vacuous) result: every action in
+    `actions` should have been explored (n_t(x,a) > 0 or n_t(x',a) > 0)
+    for at least one of x, x'. An untried action gets the trivial [0,1]
+    bound (UCB=1), which makes that action's term in the min_a max(...)
+    formula non-positive regardless of the other actions' evidence --
+    so a single unexplored action can permanently prevent certification,
+    no matter how much evidence exists for the contested actions. See
+    tests/test_decision_aware_mem.py's
+    test_certification_requires_full_action_space_exploration_at_production_scale
+    for a concrete demonstration at the project's real 8-action scale."""
     d_under = min(
         max(_lower_gap(stats, x, a, actions, t, delta), _lower_gap(stats, x2, a, actions, t, delta))
         for a in actions
