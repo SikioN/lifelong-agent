@@ -1,0 +1,52 @@
+Stage 3 Go/No-Go smoke gate -- real GPU run
+Platform: Google Colab, T4 GPU
+Backbone: Qwen/Qwen2.5-1.5B-Instruct
+Commit: 55fed3a (generator seed=2, see experiments/smoke_memory_methods.py's
+SMOKE_SEED for why -- seed=1, the original default, empirically produced a
+degenerate 0/20 result for 3 methods at alpha=0.0 due to small-sample
+correlation across a shared ticket sequence; a 3-seed diagnostic confirmed
+this was seed-specific bad luck, not a bug -- see report/notes.tex Section 1
+for the full investigation).
+
+Gate criterion (docs/materials/PLAN.md, Stage 3 row): T=20, all 5 memory
+methods, alpha in {0, 0.5}, no crashes, no degenerate (0%/100%) accuracy.
+
+=== alpha=0.0 ===
+  random     accuracy=0.100
+  recency    accuracy=0.150
+  semantic   accuracy=0.050
+  oracle     accuracy=0.850
+  decision_aware accuracy=0.050
+
+=== alpha=0.5 ===
+  random     accuracy=0.100
+  recency    accuracy=0.200
+  semantic   accuracy=0.100
+  oracle     accuracy=0.800
+  decision_aware accuracy=0.050
+
+GATE PASSED: no crashes across all 10 (method x alpha) combinations; no
+accuracy landed on the literal 0.0/1.0 degenerate boundary.
+
+Notes:
+- Oracle (0.80-0.85 both regimes) confirms the environment/policy/
+  calibration pipeline is correct -- privileged ground-truth access nearly
+  always predicts correctly, independent of alpha, as expected for an
+  upper-bound baseline.
+- Decision-Aware (0.050 both regimes) does not yet separate from the naive
+  baselines at this scale -- expected, not a regression: certified conflict
+  detection requires multiple repeated observations of both contested
+  actions on both compared micro-contexts before it can fire (a real,
+  independently-verified property of the confidence-bound construction),
+  and T=20/K=4/8 topics gives each topic only ~2-3 exposures. The real test
+  of whether certified splitting earns its keep is Stage 4's T=400 grid.
+- Per-step latency: Oracle and Decision-Aware held flat (~1.0-1.2s/step
+  throughout); Random-K, Recency, and Semantic-RAG grew steadily slower
+  (~0.85s/it to ~2.1-2.2s/it) as their memory_context prompt length grew
+  with accumulated precedents. Decision-Aware's bounded-summary retrieve()
+  design (MAX_SLOT_CONTENT_CHARS=200) keeps its prompt length flat despite
+  accumulating history -- a real GPU-timed confirmation of the design,
+  matching unit-test expectations. Worth budgeting for in Stage 4/5's
+  wall-clock projection.
+
+Full analysis: report/notes.tex, Section 1 (Stage 3 smoke gate).

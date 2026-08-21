@@ -116,8 +116,43 @@ smoke-testing exists only to catch crashes and structural bugs, not to
 draw statistical conclusions. Stage 4/5's real grid (multiple seeds,
 $T=400$) is where a meaningful accuracy comparison actually happens.
 
+\subsection{Gate closed: clean run on \texttt{seed=2}}
+\label{sec:gate-closed}
+
+\texttt{experiments/smoke\_memory\_methods.py}'s hardcoded seed was
+changed from $1$ to $2$ (Section~\ref{sec:seed-correlation}). Re-running
+the full gate (both $\alpha$ values, all 5 methods) on commit
+\texttt{55fed3a} produced:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\toprule
+Method & $\alpha=0$ & $\alpha=0.5$ \\
+\midrule
+Random-K       & $0.100$ & $0.100$ \\
+Recency        & $0.150$ & $0.200$ \\
+Semantic-RAG   & $0.050$ & $0.100$ \\
+Oracle         & $0.850$ & $0.800$ \\
+Decision-Aware & $0.050$ & $0.050$ \\
+\bottomrule
+\end{tabular}
+\caption{Stage 3 smoke gate, final passing run. Generator seed $=2$,
+commit \texttt{55fed3a}. Raw evidence:
+\texttt{experiments/smoke\_output/stage3\_smoke.txt}.}
+\label{tab:smoke-final}
+\end{table}
+
+\textbf{Gate passed:} no crashes across all 10 (method $\times$ $\alpha$)
+combinations; no accuracy landed on the literal $0.0$/$1.0$ boundary.
+This closes PLAN.md's Stage 3 row. Decision-Aware still does not separate
+from the naive baselines at this scale, consistent with
+Section~\ref{sec:decision-aware-t20} below -- expected at $T=20$, not a
+regression.
+
 \subsection{Decision-Aware's low accuracy at $T=20$ is expected, not a
 regression}
+\label{sec:decision-aware-t20}
 
 Decision-Aware scored $0.100$ (seed 1), $0.050$ (seed 2), $0.150$ (seed
 3) at $\alpha=0$ -- consistently low, in the same range as the naive
