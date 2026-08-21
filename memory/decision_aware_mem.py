@@ -213,6 +213,7 @@ class DecisionAwareMemory:
         else:
             slot.members = {x}
             slot.centroid = embedding
+            slot.content = slot._summarize()
 
     def _slot_value(self, slot: Slot) -> float:
         """Accumulated decision-utility: pooled (n-weighted) best-action

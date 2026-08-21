@@ -288,6 +288,24 @@ def test_retrieve_includes_slot_content_not_just_the_bare_action(encoder):
     assert "ACTION_0" in context
 
 
+def test_naive_overwrite_does_not_leave_stale_slot_content(encoder):
+    mem = DecisionAwareMemory(
+        budget=3, encoder=encoder, action_space=["ACTION_0", "ACTION_1"],
+        certified=False, split_on_conflict=False,
+    )
+    slot = mem._route(context_key("topic A ticket"), _ticket(0, "topic A ticket"))
+    slot.add_member(
+        context_key("topic B ticket"),
+        mem._embedding_for(context_key("topic B ticket"), _ticket(1, "topic B ticket")),
+    )
+    mem.write(_ticket(0, "topic A ticket"), action="ACTION_0", correct=True)
+    mem.write(_ticket(1, "topic B ticket"), action="ACTION_1", correct=True)
+    final_slot = mem._slot_for(context_key("topic B ticket"))
+    assert final_slot.members == {context_key("topic B ticket")}
+    assert final_slot.content == context_key("topic B ticket")
+    assert "topic A ticket" not in final_slot.content
+
+
 def test_eviction_selects_the_lowest_utility_slot_not_arbitrary(encoder):
     mem = DecisionAwareMemory(budget=2, encoder=encoder, action_space=["ACTION_0", "ACTION_1"])
     # slot 1: well-evidenced, high utility
