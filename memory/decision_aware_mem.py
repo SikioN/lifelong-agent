@@ -45,17 +45,36 @@ def context_key(ticket_text: str) -> str:
 
 class Slot:
     def __init__(self, member: str, embedding: np.ndarray):
-        self.members: set[str] = {member}
+        self.members: set[str] = set()
+        self._member_embeddings: dict[str, np.ndarray] = {}
         self.centroid: np.ndarray = embedding
-        self.content: str = self._summarize()
+        self.content: str = ""
+        self.reset(member, embedding)
+
+    def reset(self, member: str, embedding: np.ndarray) -> None:
+        """Collapses this slot to hold exactly one member, discarding all
+        prior membership/centroid/content state. Used by __init__ (for a
+        brand-new slot) and by the naive/overwrite conflict-resolution
+        path (which discards a slot's prior members entirely on the
+        first disagreement, no versioning) -- both cases are "this slot
+        now contains exactly this one member," so they share this
+        logic rather than duplicating field assignments."""
+        self.members = {member}
+        self._member_embeddings = {member: embedding}
+        self.centroid = embedding
+        self.content = self._summarize()
 
     def add_member(self, member: str, embedding: np.ndarray) -> None:
         self.members.add(member)
-        self.centroid = (self.centroid + embedding) / 2
+        self._member_embeddings[member] = embedding
+        self.centroid = np.mean(list(self._member_embeddings.values()), axis=0)
         self.content = self._summarize()
 
     def drop_member(self, member: str) -> None:
         self.members.discard(member)
+        self._member_embeddings.pop(member, None)
+        if self._member_embeddings:
+            self.centroid = np.mean(list(self._member_embeddings.values()), axis=0)
         self.content = self._summarize()
 
     def _summarize(self) -> str:
@@ -196,8 +215,6 @@ class DecisionAwareMemory:
         embedding = self._embeddings[x]
         if self.split_on_conflict:
             slot.drop_member(x)
-            if slot.members:
-                slot.centroid = np.mean([self._embeddings[m] for m in slot.members], axis=0)
             if len(self.slots) < self.budget:
                 self.slots.append(Slot(x, embedding))
                 self.n_splits += 1
@@ -211,9 +228,7 @@ class DecisionAwareMemory:
             self.slots.append(Slot(x, embedding))
             self.n_splits += 1
         else:
-            slot.members = {x}
-            slot.centroid = embedding
-            slot.content = slot._summarize()
+            slot.reset(x, embedding)
 
     def _slot_value(self, slot: Slot) -> float:
         """Accumulated decision-utility: pooled (n-weighted) best-action

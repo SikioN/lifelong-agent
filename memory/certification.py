@@ -85,18 +85,26 @@ def cannot_link(
     radius <= epsilon: d_under_t(x,x') = min_a max(Delta_under_t(x,a),
     Delta_under_t(x',a)) > epsilon.
 
-    Precondition for a useful (non-vacuous) result: every action in
-    `actions` should have been explored (n_t(x,a) > 0 or n_t(x',a) > 0)
-    for at least one of x, x'. An untried action gets the trivial [0,1]
-    bound (UCB=1), which makes that action's term in the min_a max(...)
-    formula non-positive regardless of the other actions' evidence --
-    so a single unexplored action can permanently prevent certification,
-    no matter how much evidence exists for the contested actions. See
-    tests/test_decision_aware_mem.py's
-    test_certification_requires_full_action_space_exploration_at_production_scale
-    for a concrete demonstration at the project's real 8-action scale."""
+    The min_a is restricted to actions explored on at least one of x, x'
+    (n_t(x,a) > 0 or n_t(x',a) > 0). An action with zero observations on
+    BOTH contexts contributes no real evidence either way -- its trivial
+    UCB=1 bound would otherwise make its own term in the min_a max(...)
+    non-positive, permanently vetoing certification regardless of how
+    much genuine evidence exists for the actually-contested actions. This
+    mirrors the paper's own "Certification exploration" concern (Section
+    3.3, ~line 618): certificates are only meaningful over evidence
+    actually collected. The paper's full solution forces exploration of
+    every (context, action) pair before relying on UCB; this restricts
+    the certificate to the evidence already available instead, which is
+    the smaller change that doesn't require restructuring the
+    agent-memory interaction loop to support forced exploratory actions.
+    Returns False (cannot certify) if no action has been explored on
+    either context."""
+    explored_actions = [a for a in actions if stats.n(x, a) > 0 or stats.n(x2, a) > 0]
+    if not explored_actions:
+        return False
     d_under = min(
         max(_lower_gap(stats, x, a, actions, t, delta), _lower_gap(stats, x2, a, actions, t, delta))
-        for a in actions
+        for a in explored_actions
     )
     return d_under > epsilon

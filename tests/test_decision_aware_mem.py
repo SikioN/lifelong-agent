@@ -153,8 +153,8 @@ def test_certified_and_naive_modes_diverge_under_a_returning_context(encoder):
     bad) -- certification requires the competing action to actually be
     tried on both contexts, or the untried action's trivial UCB=1 bound
     prevents cannot_link from ever certifying anything (see this file's
-    test_certification_requires_full_action_space_exploration_at_production_scale
-    for a full demonstration of this limitation at production scale).
+    test_certification_fires_with_only_the_contested_actions_explored for
+    how cannot_link now restricts its min_a to explored actions only).
     Naive mode only needs a single sample per topic, per
     _naive_conflict's own (simpler, already-approved) logic."""
     def build_shared_slot(mem):
@@ -207,34 +207,35 @@ def test_certified_and_naive_modes_diverge_under_a_returning_context(encoder):
     assert "ACTION_0" in certified_context
 
 
-def test_certification_requires_full_action_space_exploration_at_production_scale(encoder):
-    """Documents a real property of the certification math (confirmed by
-    the Decision-Aware plan's final whole-branch review): cannot_link
-    requires every action in action_space to be explored on at least one
-    of the two compared contexts before it can certify a conflict -- an
-    untried action's trivial UCB=1 bound prevents certification regardless
-    of evidence for the contested actions. At the production 8-action
-    space, exploring only the two decision-relevant actions (as a
-    near-greedy policy naturally would) never certifies a conflict, no
-    matter how many observations accumulate."""
+def test_certification_fires_with_only_the_contested_actions_explored(encoder):
+    """Confirms the fix for a real gap found in code review: cannot_link
+    used to require every action in the full action_space to be explored
+    on at least one context before it could certify anything -- at the
+    production 8-action space, a near-greedy policy exploring only the 2
+    decision-relevant actions per micro-context could never certify a
+    conflict, no matter how much evidence accumulated for those two
+    actions, because the other 6 never-tried actions' trivial UCB=1
+    bound permanently vetoed certification. cannot_link now restricts
+    its min_a to actions explored on at least one of the two contexts,
+    so the other 6 actions (untried by anyone) no longer veto: exploring
+    only the two contested actions -- on BOTH contexts, so each context
+    can rule the other's preferred action out, exactly as a near-greedy
+    policy naturally would by also occasionally trying the competing
+    action -- is now sufficient to certify."""
     mem = DecisionAwareMemory(budget=3, encoder=encoder, action_space=list(ACTION_LABELS))
     slot = mem._route(context_key("topic A ticket"), _ticket(0, "topic A ticket"))
     slot.add_member(
         context_key("topic B ticket"),
         mem._embedding_for(context_key("topic B ticket"), _ticket(1, "topic B ticket")),
     )
-    # Only explore the two decision-relevant actions (ACTION_0 for A,
-    # ACTION_1 for B) -- the other 6 actions in the 8-action space stay
-    # untried, matching a realistic near-greedy policy's behavior.
     for _ in range(500):
         mem.write(_ticket(0, "topic A ticket"), action="ACTION_0", correct=True)
+        mem.write(_ticket(0, "topic A ticket"), action="ACTION_1", correct=False)
         mem.write(_ticket(1, "topic B ticket"), action="ACTION_1", correct=True)
+        mem.write(_ticket(1, "topic B ticket"), action="ACTION_0", correct=False)
     final_slot = mem._slot_for(context_key("topic A ticket"))
-    # documents the real limitation: no split occurred despite 500 rounds
-    # of strong, consistent, mutually-exclusive evidence, because 6 of 8
-    # actions were never explored on either context.
-    assert context_key("topic B ticket") in final_slot.members
-    assert mem.n_splits == 0
+    assert context_key("topic B ticket") not in final_slot.members
+    assert mem.n_splits >= 1
 
 
 def test_retrieve_does_not_mutate_memory_state(encoder):
@@ -260,6 +261,14 @@ def test_drop_member_recomputes_centroid(encoder):
         mem.write(_ticket(1, "topic B ticket"), action="ACTION_0", correct=False)
     final_slot = mem._slot_for(context_key("topic A ticket"))
     assert not np.array_equal(final_slot.centroid, old_shared_centroid)
+
+
+def test_add_member_computes_a_true_mean_not_an_ema():
+    slot = Slot("a", np.array([0.0, 0.0]))
+    slot.add_member("b", np.array([3.0, 0.0]))
+    slot.add_member("c", np.array([6.0, 0.0]))
+    # true mean of [0,0], [3,0], [6,0] is [3,0] -- an EMA would NOT give this
+    assert np.allclose(slot.centroid, np.array([3.0, 0.0]))
 
 
 def test_slot_content_reflects_its_members(encoder):
