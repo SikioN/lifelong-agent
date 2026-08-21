@@ -32,6 +32,10 @@ from memory.semantic_mem import DEFAULT_ENCODER_NAME, _cosine_similarity
 
 DELTA = 0.05  # confidence-bound failure probability (paper's delta)
 EPSILON_CONFLICT = 0.3  # cannot-link margin (paper's epsilon)
+MAX_SLOT_CONTENT_CHARS = 200  # bounded textual summary length, per the paper's
+# own language-agent realization (arXiv-2605.10870v1, neurips_2026.tex ~line 2198:
+# "Slot content: a textual summary of at most L characters, maintained via an
+# update rule") -- this is the project's chosen concrete value for L.
 
 
 def context_key(ticket_text: str) -> str:
@@ -43,13 +47,23 @@ class Slot:
     def __init__(self, member: str, embedding: np.ndarray):
         self.members: set[str] = {member}
         self.centroid: np.ndarray = embedding
+        self.content: str = self._summarize()
 
     def add_member(self, member: str, embedding: np.ndarray) -> None:
         self.members.add(member)
         self.centroid = (self.centroid + embedding) / 2
+        self.content = self._summarize()
 
     def drop_member(self, member: str) -> None:
         self.members.discard(member)
+        self.content = self._summarize()
+
+    def _summarize(self) -> str:
+        """Bounded textual summary of the slot's current members -- see
+        MAX_SLOT_CONTENT_CHARS's docstring for the paper reference this
+        implements."""
+        joined = "; ".join(sorted(self.members))
+        return joined[:MAX_SLOT_CONTENT_CHARS]
 
 
 class DecisionAwareMemory:
@@ -143,7 +157,10 @@ class DecisionAwareMemory:
         best_action = self._slot_best_action(slot)
         if best_action is None:
             return ""
-        return f"Most confident action for similar past decisions: {best_action}."
+        return (
+            f'Similar past situations: "{slot.content}"\n'
+            f"Most confident action for similar past decisions: {best_action}."
+        )
 
     def write(self, ticket: Ticket, action: str, correct: bool) -> None:
         self._t += 1

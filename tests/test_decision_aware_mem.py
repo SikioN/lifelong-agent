@@ -12,7 +12,7 @@ import pytest
 from sentence_transformers import SentenceTransformer
 
 from env.generator import ACTION_LABELS, Ticket
-from memory.decision_aware_mem import DecisionAwareMemory, context_key
+from memory.decision_aware_mem import DecisionAwareMemory, Slot, context_key
 
 
 @pytest.fixture(scope="module")
@@ -260,6 +260,32 @@ def test_drop_member_recomputes_centroid(encoder):
         mem.write(_ticket(1, "topic B ticket"), action="ACTION_0", correct=False)
     final_slot = mem._slot_for(context_key("topic A ticket"))
     assert not np.array_equal(final_slot.centroid, old_shared_centroid)
+
+
+def test_slot_content_reflects_its_members(encoder):
+    mem = DecisionAwareMemory(budget=4, encoder=encoder, action_space=["ACTION_0", "ACTION_1"])
+    mem.write(_ticket(0, "topic A ticket"), action="ACTION_0", correct=True)
+    slot = mem._slot_for(context_key("topic A ticket"))
+    assert "topic A ticket" in slot.content
+
+
+def test_slot_content_updates_when_a_member_is_dropped(encoder):
+    slot = Slot("topic A ticket", np.zeros(3))
+    slot.add_member("topic B ticket", np.zeros(3))
+    assert "topic A ticket" in slot.content
+    assert "topic B ticket" in slot.content
+    slot.drop_member("topic A ticket")
+    assert "topic A ticket" not in slot.content
+    assert "topic B ticket" in slot.content
+
+
+def test_retrieve_includes_slot_content_not_just_the_bare_action(encoder):
+    mem = DecisionAwareMemory(budget=4, encoder=encoder, action_space=["ACTION_0", "ACTION_1"])
+    for i in range(10):
+        mem.write(_ticket(i, "topic A ticket"), action="ACTION_0", correct=True)
+    context = mem.retrieve(_ticket(99, "topic A ticket"))
+    assert "topic A ticket" in context
+    assert "ACTION_0" in context
 
 
 def test_eviction_selects_the_lowest_utility_slot_not_arbitrary(encoder):
