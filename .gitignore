@@ -74,3 +74,10 @@ evals/
 # existing precedent of committing env/manipulation_check_output/.
 kaggle_runner/kernel_template.py
 kaggle_runner/kernel_template.ipynb
+
+# LaTeX build artifacts (report/notes.tex is source of truth; PDFs are
+# rebuilt locally, not committed)
+report/*.aux
+report/*.log
+report/*.out
+report/*.pdf
